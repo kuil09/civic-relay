@@ -220,13 +220,21 @@ export async function validateCaseDirectory(casePath, options = {}) {
       }
       if (validation.valid) {
         const targets = [...new Set(raw.entries
-          .filter((entry) => entry.event_type === 'co_sign_consent')
+          .filter((entry) => ['co_sign_consent', 'conflict_opened', 'conflict_resolved'].includes(entry.event_type))
           .map((entry) => entry.target))];
         for (const target of targets) {
           try {
             const status = await collaborationStatus(casePath, { target });
             for (const consent of status.stale_consents) {
               findings.push(finding('warning', 'stale_consent', `collaboration.json#/entries/${consent.entry_id}`, `consent no longer matches the current document hash for ${target}`, 'Phase 4.3'));
+            }
+            for (const conflict of status.unresolved_conflicts) {
+              findings.push(finding('warning', 'unresolved_collaboration_conflict', `collaboration.json#/entries/${conflict.entry_id}`, `conflict has no human resolution for the current document hash at ${target}`, 'Phase 4.3'));
+            }
+            for (const conflict of status.unresolved_conflicts) {
+              for (const resolution of conflict.stale_resolutions) {
+                findings.push(finding('warning', 'stale_conflict_resolution', `collaboration.json#/entries/${resolution.entry_id}`, `conflict resolution no longer matches the current document hash for ${target}`, 'Phase 4.3'));
+              }
             }
           } catch (error) {
             findings.push(finding('warning', 'collaboration_target', target, error.message, 'Phase 4.3'));

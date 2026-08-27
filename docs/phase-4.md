@@ -38,8 +38,10 @@ Phase 4는 MVP 코어를 웹서비스로 강제 전환하지 않는다. 협업·
 Implementation boundary:
 
 - `collaboration.json` is an optional, hash-chained append-only ledger.
-- Participant registration, contribution, review, dissent, approval, co-signature consent, and withdrawal are separate event types.
+- Participant registration, contribution, review, dissent, conflict opening, human conflict resolution, approval, co-signature consent, and withdrawal are separate event types.
 - Co-signature consent is bound to a target document hash and becomes stale after document changes.
+- Conflicts reference multiple prior hashes for one target. A human resolution is bound to the current hash, becomes stale after revision, and unresolved conflicts block joint attribution.
+- Document hashes provide version lineage without copying sensitive document contents into the ledger.
 - Public redaction pseudonymizes private participant identities and re-chains the sanitized ledger.
 - Collaboration approval remains separate from the six approval stages in `case.json`.
 

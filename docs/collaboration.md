@@ -21,11 +21,13 @@ The supported roles are `case_author`, `evidence_reviewer`, `policy_editor`, `re
 - `contribution`: records authored or edited work.
 - `review`: records review activity without implying approval.
 - `dissent`: preserves disagreement without deleting prior history.
+- `conflict_opened`: links two or more earlier entries for the same target that attest to different document hashes.
+- `conflict_resolved`: records a human-confirmed outcome for an open conflict against the current document hash.
 - `approval`: records a collaboration-level human decision. It does not satisfy a `case.json` approval stage.
 - `co_sign_consent`: records explicit human-confirmed consent for one identity and one document hash.
 - `consent_withdrawal`: appends a withdrawal that references an earlier co-sign consent.
 
-Human-only events require `--confirm-human`. An AI or organization participant cannot be the actor for approval, co-sign consent, or withdrawal. A human with the `public_release_manager` role may explicitly act for a registered organization by setting `--identity` to that organization ID; the ledger records both the human actor and represented identity. The role alone never creates consent.
+Human-only events require `--confirm-human`. An AI or organization participant cannot be the actor for approval, conflict resolution, co-sign consent, or withdrawal. A human with the `public_release_manager` role may explicitly act for a registered organization by setting `--identity` to that organization ID; the ledger records both the human actor and represented identity. The role alone never creates consent.
 
 ## CLI
 
@@ -78,6 +80,28 @@ node src/cli.js collaboration-record cases/example \
 
 Multiple roles or required identities use `|` or comma separators.
 
+Open and resolve a conflict between two recorded document versions:
+
+```bash
+node src/cli.js collaboration-record cases/example \
+  --type conflict-opened \
+  --actor author-1 \
+  --target 07-policy-proposal.md \
+  --conflicting-entry entry-first-version\|entry-second-version \
+  --summary "The candidate versions make incompatible requests."
+
+node src/cli.js collaboration-record cases/example \
+  --type conflict-resolved \
+  --actor author-1 \
+  --target 07-policy-proposal.md \
+  --conflict-entry entry-open-conflict \
+  --outcome merged \
+  --confirm-human \
+  --summary "Merged the shared evidence and retained the narrower request."
+```
+
+Conflict outcomes are `adopt_current`, `merged`, and `rejected_change`.
+
 ## Consent Boundary
 
 Joint attribution is valid only when the caller supplies the intended identity set and every identity has a non-withdrawn co-sign consent for the current target hash. Participant registration, contribution volume, role assignment, review, or collaboration approval cannot substitute for that consent.
@@ -86,12 +110,20 @@ When the target file changes, the old consent remains in the ledger as historica
 
 The existing six stages in `case.json` remain authoritative for problem, evidence, policy, recipients, document, and dispatch approval. Collaboration events never create or refresh those approvals.
 
+## Conflict and Version Boundary
+
+The ledger treats each target SHA-256 value as a document version identifier. `collaboration-status` derives `document_versions` from the ordered entries and reports the entry IDs that attested to each hash. It does not copy document contents into the ledger; Git or a separately governed archive remains responsible for retaining bytes when historical reconstruction is required.
+
+A conflict can be opened only by referencing at least two earlier entries for the same target with different document hashes. Opening a conflict preserves both candidates and does not choose a winner. Resolving it requires a registered human, `--confirm-human`, one of the explicit outcomes, and the current target hash. AI actors may identify a conflict but cannot resolve it.
+
+An unresolved conflict blocks joint attribution even when every requested identity has current consent. If the target changes after resolution, the resolution remains in history as stale and the conflict becomes unresolved for the new version. A new human resolution is required; overwriting or deleting the earlier conflict or resolution is never required.
+
 ## Public Redaction
 
 `redact` pseudonymizes every participant marked `visibility: "private"`, updates all references to that identity, redacts recognized contact data and secrets in free text, marks the derivative as `public_copy: true`, and rebuilds its hash chain. Public identities remain only when explicitly marked public.
 
-The public policy-pattern bundle still excludes authorship, consent, and representativeness. `collaboration-status` treats every public-copy consent as non-authoritative, even when the target bytes happen to be unchanged. A public collaboration ledger cannot be reused as a dispatch authorization or as evidence of consent in another case.
+The public policy-pattern bundle still excludes authorship, consent, and representativeness. `collaboration-status` treats every public-copy consent and conflict resolution as non-authoritative, even when the target bytes happen to be unchanged. A public collaboration ledger cannot be reused as a dispatch authorization or as evidence of consent or conflict resolution in another case.
 
 ## Validation and Failure Modes
 
-`validate` checks the optional ledger when present. It reports the violated contract and `collaboration.json` path for malformed entries, unknown actors, AI-created human decisions, invalid targets, and broken hash chains. Stale consent is reported as a warning because document revision is legitimate, but stale consent never satisfies joint attribution.
+`validate` checks the optional ledger when present. It reports the violated contract and `collaboration.json` path for malformed entries, unknown actors, AI-created human decisions, invalid targets, invalid conflict references, and broken hash chains. Stale consent, unresolved conflicts, and stale conflict resolutions are warnings because document revision is legitimate, but none satisfies joint attribution.

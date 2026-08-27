@@ -143,6 +143,55 @@
         }
       }
     },
+    "conflict_opened_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "conflicting_entry_ids"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "conflicting_entry_ids": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "conflict_resolved_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "conflict_entry_id",
+        "outcome",
+        "confirmed_human"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "conflict_entry_id": {
+          "$ref": "#/$defs/id"
+        },
+        "outcome": {
+          "enum": [
+            "adopt_current",
+            "merged",
+            "rejected_change"
+          ]
+        },
+        "confirmed_human": {
+          "const": true
+        }
+      }
+    },
     "entry": {
       "type": "object",
       "additionalProperties": false,
@@ -167,6 +216,8 @@
             "contribution",
             "review",
             "dissent",
+            "conflict_opened",
+            "conflict_resolved",
             "approval",
             "co_sign_consent",
             "consent_withdrawal"
@@ -204,6 +255,38 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "conflict_opened"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/conflict_opened_payload"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "conflict_resolved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/conflict_resolved_payload"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

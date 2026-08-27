@@ -101,7 +101,7 @@ node src/cli.js collaboration-status cases/example \
   --target 07-policy-proposal.md --identity author-1
 ```
 
-Participation and contribution never imply co-signature consent. Consent is bound to the target document hash, becomes stale when the document changes, and requires explicit human confirmation. `redact` pseudonymizes private participant identities while preserving ledger integrity.
+Participation and contribution never imply co-signature consent. Consent is bound to the target document hash, becomes stale when the document changes, and requires explicit human confirmation. Conflicts link earlier entries for different hashes of one target; only a human can resolve them for the current hash, and unresolved conflicts block joint attribution. `collaboration-status` exposes the hash lineage without copying historical document contents into the ledger. `redact` pseudonymizes private participant identities while preserving ledger integrity and making copied consent and resolution records non-authoritative.
 
 ## 사례 산출물
 

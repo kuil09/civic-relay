@@ -72,7 +72,7 @@ Commands:
   jurisdiction <id> [--root path]
   collaboration-status <case-path> --target <file[#/pointer]> [--identity <id|id>]
   collaboration-add-participant <case-path> --id <participant-id> --name <display-name> --kind human|organization|ai --role <role|role> [--visibility private|public] [--recorded-by <id>] [--target <file>]
-  collaboration-record <case-path> --type contribution|review|dissent|approval|co-sign-consent|consent-withdrawal --actor <id> --target <file[#/pointer]> [--identity <id>] [--consent-entry <id>] [--confirm-human] [--summary text]
+  collaboration-record <case-path> --type contribution|review|dissent|conflict-opened|conflict-resolved|approval|co-sign-consent|consent-withdrawal --actor <id> --target <file[#/pointer]> [--identity <id>] [--consent-entry <id>] [--conflicting-entry <id|id>] [--conflict-entry <id>] [--outcome adopt_current|merged|rejected_change] [--confirm-human] [--summary text]
   publish-case <redacted-case-path> --output <path> [--force]
   build-library <public-root> [--output <path>]
 `);
@@ -235,6 +235,9 @@ async function main() {
       target: required(options.target, '--target'),
       identityId: options.identity || null,
       consentEntryId: options['consent-entry'] || null,
+      conflictingEntryIds: listOption(options['conflicting-entry']),
+      conflictEntryId: options['conflict-entry'] || null,
+      outcome: options.outcome || null,
       confirmHuman: Boolean(options['confirm-human']),
       summary: options.summary || '',
     }), null, 2));

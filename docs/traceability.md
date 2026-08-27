@@ -32,3 +32,5 @@
 | 11. Legacy cases work without Phase 4 files | optional collaboration and public-library boundaries | `tests/collaboration.test.js`, existing MVP tests |
 | 12. Existing CLI works without public or collaboration features | unchanged core commands and optional imports | `tests/collaboration.test.js` CLI process test |
 | Public collaboration privacy | pseudonymization, `public_copy` authority block, and ledger re-chaining | `tests/collaboration.test.js` |
+| Phase 4 conflict resolution | divergent-hash conflict references, human-only outcomes, revision expiry, and joint-attribution block | `tests/collaboration.test.js` |
+| Phase 4 document version lineage | ordered target hashes and attesting entry IDs exposed by collaboration status | `tests/collaboration.test.js` |

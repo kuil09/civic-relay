@@ -26,6 +26,8 @@ export const COLLABORATION_EVENT_TYPES = [
   'contribution',
   'review',
   'dissent',
+  'conflict_opened',
+  'conflict_resolved',
   'approval',
   'co_sign_consent',
   'consent_withdrawal',
@@ -33,7 +35,8 @@ export const COLLABORATION_EVENT_TYPES = [
 
 const PARTICIPANT_KINDS = new Set(['human', 'ai', 'organization']);
 const VISIBILITIES = new Set(['public', 'private']);
-const HUMAN_ONLY_EVENTS = new Set(['approval', 'co_sign_consent', 'consent_withdrawal']);
+const HUMAN_ONLY_EVENTS = new Set(['approval', 'co_sign_consent', 'consent_withdrawal', 'conflict_resolved']);
+const CONFLICT_OUTCOMES = new Set(['adopt_current', 'merged', 'rejected_change']);
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const AI_LABEL = /(^|\b)(ai|assistant|agent|model|chatgpt|gpt|claude|codex)(\b|$)/i;
@@ -157,7 +160,11 @@ function validateActionPayload(entry, pointer, entriesById, errors) {
     ? ['summary', 'identity_id', 'confirmed_human']
     : entry.event_type === 'consent_withdrawal'
       ? ['summary', 'consent_entry_id', 'confirmed_human']
-      : ['summary'];
+      : entry.event_type === 'conflict_opened'
+        ? ['summary', 'conflicting_entry_ids']
+        : entry.event_type === 'conflict_resolved'
+          ? ['summary', 'conflict_entry_id', 'outcome', 'confirmed_human']
+          : ['summary'];
   rejectUnknownKeys(payload, allowed, `${pointer}/payload`, errors);
   if (typeof payload.summary !== 'string') errors.push(`${pointer}/payload/summary: summary must be a string`);
 
@@ -175,6 +182,56 @@ function validateActionPayload(entry, pointer, entriesById, errors) {
     } else {
       if (consent.actor_id !== entry.actor_id) errors.push(`${pointer}/actor_id: only the consent actor can withdraw the consent`);
       if (consent.target !== entry.target) errors.push(`${pointer}/target: withdrawal target must match the consent target`);
+    }
+  }
+
+  if (entry.event_type === 'conflict_opened') {
+    if (!Array.isArray(payload.conflicting_entry_ids) || payload.conflicting_entry_ids.length < 2) {
+      errors.push(`${pointer}/payload/conflicting_entry_ids: at least two prior entry IDs are required`);
+    } else {
+      const uniqueIds = new Set(payload.conflicting_entry_ids);
+      if (uniqueIds.size !== payload.conflicting_entry_ids.length) {
+        errors.push(`${pointer}/payload/conflicting_entry_ids: entry IDs must be unique`);
+      }
+      const referenced = [];
+      for (const entryId of payload.conflicting_entry_ids) {
+        if (!ID_PATTERN.test(String(entryId || ''))) {
+          errors.push(`${pointer}/payload/conflicting_entry_ids: invalid entry ID ${entryId}`);
+          continue;
+        }
+        const candidate = entriesById.get(entryId);
+        if (!candidate) {
+          errors.push(`${pointer}/payload/conflicting_entry_ids: referenced entry ${entryId} does not exist earlier in the ledger`);
+          continue;
+        }
+        if (candidate.target !== entry.target) {
+          errors.push(`${pointer}/payload/conflicting_entry_ids: referenced entry ${entryId} must have the same target`);
+          continue;
+        }
+        referenced.push(candidate);
+      }
+      if (referenced.length === payload.conflicting_entry_ids.length
+        && new Set(referenced.map((candidate) => candidate.document_hash)).size < 2) {
+        errors.push(`${pointer}/payload/conflicting_entry_ids: referenced entries must represent at least two document hashes`);
+      }
+    }
+  }
+
+  if (entry.event_type === 'conflict_resolved') {
+    if (!ID_PATTERN.test(String(payload.conflict_entry_id || ''))) {
+      errors.push(`${pointer}/payload/conflict_entry_id: valid conflict entry ID is required`);
+    }
+    if (!CONFLICT_OUTCOMES.has(payload.outcome)) {
+      errors.push(`${pointer}/payload/outcome: outcome must be adopt_current, merged, or rejected_change`);
+    }
+    if (payload.confirmed_human !== true) {
+      errors.push(`${pointer}/payload/confirmed_human: explicit human confirmation is required`);
+    }
+    const conflict = entriesById.get(payload.conflict_entry_id);
+    if (!conflict || conflict.event_type !== 'conflict_opened') {
+      errors.push(`${pointer}/payload/conflict_entry_id: referenced open conflict does not exist earlier in the ledger`);
+    } else if (conflict.target !== entry.target) {
+      errors.push(`${pointer}/target: resolution target must match the conflict target`);
     }
   }
 }
@@ -375,6 +432,20 @@ export async function recordCollaborationEvent(casePath, options) {
     payload.consent_entry_id = assertIdentifier(options.consentEntryId, 'consent entry ID');
     payload.confirmed_human = true;
   }
+  if (eventType === 'conflict_opened') {
+    const conflictingEntryIds = [...new Set(options.conflictingEntryIds || [])]
+      .map((entryId) => assertIdentifier(entryId, 'conflicting entry ID'));
+    if (conflictingEntryIds.length < 2) throw new Error('conflict_opened requires at least two unique --conflicting-entry IDs');
+    payload.conflicting_entry_ids = conflictingEntryIds;
+  }
+  if (eventType === 'conflict_resolved') {
+    payload.conflict_entry_id = assertIdentifier(options.conflictEntryId, 'conflict entry ID');
+    payload.outcome = String(options.outcome || '');
+    if (!CONFLICT_OUTCOMES.has(payload.outcome)) {
+      throw new Error('conflict_resolved requires --outcome adopt_current, merged, or rejected_change');
+    }
+    payload.confirmed_human = true;
+  }
 
   return appendEntry(casePath, ledger, {
     entry_id: `entry-${randomUUID()}`,
@@ -397,6 +468,9 @@ export async function collaborationStatus(casePath, options = {}) {
       current_consents: [],
       stale_consents: [],
       withdrawn_consents: [],
+      document_versions: [],
+      resolved_conflicts: [],
+      unresolved_conflicts: [],
       joint_attribution_valid: false,
       reason: 'collaboration_not_initialized',
     };
@@ -423,6 +497,49 @@ export async function collaborationStatus(casePath, options = {}) {
   const currentConsents = consents.filter((entry) => entry.current && !entry.withdrawn);
   const staleConsents = consents.filter((entry) => !entry.current && !entry.withdrawn);
   const withdrawnConsents = consents.filter((entry) => entry.withdrawn);
+  const targetEntries = ledger.entries.filter((entry) => entry.target === target);
+  const versionsByHash = new Map();
+  for (const entry of targetEntries) {
+    const version = versionsByHash.get(entry.document_hash) || {
+      document_hash: entry.document_hash,
+      first_recorded_at: entry.occurred_at,
+      last_recorded_at: entry.occurred_at,
+      entry_ids: [],
+      current: entry.document_hash === currentHash,
+    };
+    version.last_recorded_at = entry.occurred_at;
+    version.entry_ids.push(entry.entry_id);
+    versionsByHash.set(entry.document_hash, version);
+  }
+  const resolutionEntries = targetEntries.filter((entry) => entry.event_type === 'conflict_resolved');
+  const conflicts = targetEntries
+    .filter((entry) => entry.event_type === 'conflict_opened')
+    .map((entry) => {
+      const resolutions = resolutionEntries
+        .filter((candidate) => candidate.payload.conflict_entry_id === entry.entry_id)
+        .map((candidate) => ({
+          entry_id: candidate.entry_id,
+          actor_id: candidate.actor_id,
+          document_hash: candidate.document_hash,
+          occurred_at: candidate.occurred_at,
+          outcome: candidate.payload.outcome,
+          current: candidate.document_hash === currentHash && ledger.public_copy !== true,
+        }));
+      const currentResolution = resolutions.filter((candidate) => candidate.current).at(-1) || null;
+      return {
+        entry_id: entry.entry_id,
+        actor_id: entry.actor_id,
+        occurred_at: entry.occurred_at,
+        candidate_entry_ids: entry.payload.conflicting_entry_ids,
+        candidate_document_hashes: entry.payload.conflicting_entry_ids
+          .map((entryId) => ledger.entries.find((candidate) => candidate.entry_id === entryId)?.document_hash)
+          .filter(Boolean),
+        current_resolution: currentResolution,
+        stale_resolutions: resolutions.filter((candidate) => !candidate.current),
+      };
+    });
+  const resolvedConflicts = conflicts.filter((conflict) => conflict.current_resolution);
+  const unresolvedConflicts = conflicts.filter((conflict) => !conflict.current_resolution);
   const requiredIdentities = [...new Set(options.requiredIdentities || [])];
   const currentIdentityIds = new Set(currentConsents.map((entry) => entry.identity_id));
   const missingIdentities = requiredIdentities.filter((identity) => !currentIdentityIds.has(identity));
@@ -430,6 +547,7 @@ export async function collaborationStatus(casePath, options = {}) {
   if (ledger.public_copy === true) reason = 'public_copy_non_authoritative';
   else if (requiredIdentities.length === 0) reason = 'required_identities_missing';
   else if (missingIdentities.length) reason = 'explicit_current_consent_missing';
+  else if (unresolvedConflicts.length) reason = 'unresolved_conflicts';
 
   return {
     enabled: true,
@@ -439,9 +557,15 @@ export async function collaborationStatus(casePath, options = {}) {
     current_consents: currentConsents,
     stale_consents: staleConsents,
     withdrawn_consents: withdrawnConsents,
+    document_versions: [...versionsByHash.values()],
+    resolved_conflicts: resolvedConflicts,
+    unresolved_conflicts: unresolvedConflicts,
     required_identities: requiredIdentities,
     missing_identities: missingIdentities,
-    joint_attribution_valid: ledger.public_copy !== true && requiredIdentities.length > 0 && missingIdentities.length === 0,
+    joint_attribution_valid: ledger.public_copy !== true
+      && requiredIdentities.length > 0
+      && missingIdentities.length === 0
+      && unresolvedConflicts.length === 0,
     reason,
   };
 }

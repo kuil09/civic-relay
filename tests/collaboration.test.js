@@ -33,6 +33,18 @@ async function addHuman(casePath, id = 'author-1', visibility = 'private', roles
   });
 }
 
+async function recordDivergentVersions(casePath, actorId = 'author-1') {
+  const target = '07-policy-proposal.md';
+  const first = await recordCollaborationEvent(casePath, {
+    eventType: 'contribution', actorId, target, summary: 'Recorded the first candidate version.',
+  });
+  await fs.appendFile(path.join(casePath, target), '\nCandidate revision.\n');
+  const second = await recordCollaborationEvent(casePath, {
+    eventType: 'contribution', actorId, target, summary: 'Recorded the second candidate version.',
+  });
+  return { target, first, second };
+}
+
 test('collaboration remains optional for legacy and local-only cases', async () => {
   const casePath = await createCase('optional-collaboration');
   await assert.rejects(() => fs.stat(path.join(casePath, 'collaboration.json')), { code: 'ENOENT' });
@@ -52,6 +64,66 @@ test('the existing CLI validates a case without public or collaboration features
     '--json',
   ]);
   assert.equal(JSON.parse(stdout).valid, true);
+});
+
+test('the CLI records and resolves a conflict through the production entrypoint', async () => {
+  const casePath = await createCase('conflict-cli');
+  const cli = path.join(repositoryRoot, 'src', 'cli.js');
+  await execFileAsync(process.execPath, [
+    cli,
+    'collaboration-add-participant',
+    casePath,
+    '--id', 'author-1',
+    '--name', 'Human Author',
+    '--kind', 'human',
+    '--role', 'case_author',
+  ]);
+  const first = JSON.parse((await execFileAsync(process.execPath, [
+    cli,
+    'collaboration-record',
+    casePath,
+    '--type', 'contribution',
+    '--actor', 'author-1',
+    '--target', '07-policy-proposal.md',
+  ])).stdout);
+  await fs.appendFile(path.join(casePath, '07-policy-proposal.md'), '\nCLI candidate revision.\n');
+  const second = JSON.parse((await execFileAsync(process.execPath, [
+    cli,
+    'collaboration-record',
+    casePath,
+    '--type', 'contribution',
+    '--actor', 'author-1',
+    '--target', '07-policy-proposal.md',
+  ])).stdout);
+  const conflict = JSON.parse((await execFileAsync(process.execPath, [
+    cli,
+    'collaboration-record',
+    casePath,
+    '--type', 'conflict-opened',
+    '--actor', 'author-1',
+    '--target', '07-policy-proposal.md',
+    '--conflicting-entry', `${first.entry_id}|${second.entry_id}`,
+  ])).stdout);
+  await execFileAsync(process.execPath, [
+    cli,
+    'collaboration-record',
+    casePath,
+    '--type', 'conflict-resolved',
+    '--actor', 'author-1',
+    '--target', '07-policy-proposal.md',
+    '--conflict-entry', conflict.entry_id,
+    '--outcome', 'adopt_current',
+    '--confirm-human',
+  ]);
+  const status = JSON.parse((await execFileAsync(process.execPath, [
+    cli,
+    'collaboration-status',
+    casePath,
+    '--target', '07-policy-proposal.md',
+  ])).stdout);
+
+  assert.equal(status.resolved_conflicts.length, 1);
+  assert.equal(status.resolved_conflicts[0].current_resolution.outcome, 'adopt_current');
 });
 
 test('participants and event kinds remain distinct in an append-only hash chain', async () => {
@@ -81,6 +153,105 @@ test('participants and event kinds remain distinct in an append-only hash chain'
   ]);
   assert.equal(validateCollaborationLedger(ledger, { caseId: 'collaboration-events' }).valid, true);
   assert.equal(ledger.entries[1].previous_entry_hash, ledger.entries[0].entry_hash);
+});
+
+test('a conflict must reference prior entries for different versions of the same target', async () => {
+  const casePath = await createCase('conflict-candidates');
+  await addHuman(casePath);
+  const target = '07-policy-proposal.md';
+  const first = await recordCollaborationEvent(casePath, {
+    eventType: 'contribution', actorId: 'author-1', target,
+  });
+  const sameVersion = await recordCollaborationEvent(casePath, {
+    eventType: 'review', actorId: 'author-1', target,
+  });
+
+  await assert.rejects(() => recordCollaborationEvent(casePath, {
+    eventType: 'conflict_opened',
+    actorId: 'author-1',
+    target,
+    conflictingEntryIds: [first.entry_id, sameVersion.entry_id],
+  }), /at least two document hashes/);
+
+  await fs.appendFile(path.join(casePath, target), '\nDivergent version.\n');
+  const divergent = await recordCollaborationEvent(casePath, {
+    eventType: 'contribution', actorId: 'author-1', target,
+  });
+  const conflict = await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_opened',
+    actorId: 'author-1',
+    target,
+    conflictingEntryIds: [first.entry_id, divergent.entry_id],
+  });
+
+  assert.deepEqual(conflict.payload.conflicting_entry_ids, [first.entry_id, divergent.entry_id]);
+});
+
+test('unresolved conflicts block joint attribution and human resolution expires after revision', async () => {
+  const casePath = await createCase('conflict-lifecycle');
+  await addHuman(casePath);
+  const { target, first, second } = await recordDivergentVersions(casePath);
+  await recordCollaborationEvent(casePath, {
+    eventType: 'co_sign_consent', actorId: 'author-1', target, confirmHuman: true,
+  });
+  const conflict = await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_opened',
+    actorId: 'author-1',
+    target,
+    conflictingEntryIds: [first.entry_id, second.entry_id],
+    summary: 'The two versions make incompatible policy requests.',
+  });
+
+  const unresolved = await collaborationStatus(casePath, {
+    target,
+    requiredIdentities: ['author-1'],
+  });
+  assert.equal(unresolved.current_consents.length, 1);
+  assert.equal(unresolved.joint_attribution_valid, false);
+  assert.equal(unresolved.reason, 'unresolved_conflicts');
+  assert.equal(unresolved.unresolved_conflicts.length, 1);
+  assert.equal(unresolved.document_versions.length, 2);
+
+  await assert.rejects(() => recordCollaborationEvent(casePath, {
+    eventType: 'conflict_resolved',
+    actorId: 'author-1',
+    target,
+    conflictEntryId: conflict.entry_id,
+    outcome: 'merged',
+  }), /requires --confirm-human/);
+
+  const resolution = await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_resolved',
+    actorId: 'author-1',
+    target,
+    conflictEntryId: conflict.entry_id,
+    outcome: 'merged',
+    confirmHuman: true,
+    summary: 'Merged the compatible evidence and retained the narrower request.',
+  });
+  const resolved = await collaborationStatus(casePath, {
+    target,
+    requiredIdentities: ['author-1'],
+  });
+  assert.equal(resolved.joint_attribution_valid, true);
+  assert.equal(resolved.resolved_conflicts[0].current_resolution.entry_id, resolution.entry_id);
+
+  await fs.appendFile(path.join(casePath, target), '\nPost-resolution revision.\n');
+  await recordCollaborationEvent(casePath, {
+    eventType: 'co_sign_consent', actorId: 'author-1', target, confirmHuman: true,
+  });
+  const stale = await collaborationStatus(casePath, {
+    target,
+    requiredIdentities: ['author-1'],
+  });
+  assert.equal(stale.current_consents.length, 1);
+  assert.equal(stale.joint_attribution_valid, false);
+  assert.equal(stale.reason, 'unresolved_conflicts');
+  assert.equal(stale.unresolved_conflicts[0].stale_resolutions[0].entry_id, resolution.entry_id);
+
+  const validation = await validateCaseDirectory(casePath);
+  assert(validation.findings.some((item) => item.code === 'unresolved_collaboration_conflict'));
+  assert(validation.findings.some((item) => item.code === 'stale_conflict_resolution'));
 });
 
 test('participation never becomes joint attribution without explicit current consent', async () => {
@@ -161,7 +332,7 @@ test('document changes expire prior co-sign consent without deleting history', a
   assert(validation.findings.some((item) => item.code === 'stale_consent'));
 });
 
-test('AI actors cannot create human approval, consent, or signature records', async () => {
+test('AI actors cannot create human approval, consent, signature, or conflict resolution records', async () => {
   const casePath = await createCase('ai-collaboration');
   await registerParticipant(casePath, {
     participantId: 'assistant-1',
@@ -179,8 +350,32 @@ test('AI actors cannot create human approval, consent, or signature records', as
       confirmHuman: true,
     }), /requires a human actor/);
   }
+  await registerParticipant(casePath, {
+    participantId: 'author-1',
+    displayName: 'Human Author',
+    participantKind: 'human',
+    roles: ['case_author'],
+    visibility: 'private',
+    recordedBy: 'assistant-1',
+  });
+  const { target, first, second } = await recordDivergentVersions(casePath, 'author-1');
+  const conflict = await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_opened',
+    actorId: 'assistant-1',
+    target,
+    conflictingEntryIds: [first.entry_id, second.entry_id],
+  });
+  await assert.rejects(() => recordCollaborationEvent(casePath, {
+    eventType: 'conflict_resolved',
+    actorId: 'assistant-1',
+    target,
+    conflictEntryId: conflict.entry_id,
+    outcome: 'adopt_current',
+    confirmHuman: true,
+  }), /requires a human actor/);
+
   const ledger = await loadCollaborationLedger(casePath, { required: true });
-  assert.equal(ledger.entries.length, 1);
+  assert.equal(ledger.entries.at(-1).event_type, 'conflict_opened');
 });
 
 test('a consent withdrawal is appended and invalidates only the referenced consent', async () => {
@@ -224,7 +419,7 @@ test('public redaction pseudonymizes private participants and preserves ledger i
     visibility: 'public',
     recordedBy: 'private-author',
   });
-  await recordCollaborationEvent(casePath, {
+  const firstVersion = await recordCollaborationEvent(casePath, {
     eventType: 'contribution',
     actorId: 'private-author',
     target: '07-policy-proposal.md',
@@ -236,6 +431,29 @@ test('public redaction pseudonymizes private participants and preserves ledger i
     identityId: 'private-author',
     target: '07-policy-proposal.md',
     confirmHuman: true,
+  });
+  await fs.appendFile(path.join(casePath, '07-policy-proposal.md'), '\nPublic candidate revision.\n');
+  const secondVersion = await recordCollaborationEvent(casePath, {
+    eventType: 'contribution',
+    actorId: 'private-author',
+    target: '07-policy-proposal.md',
+    summary: 'Private Person recorded the revised candidate.',
+  });
+  const conflict = await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_opened',
+    actorId: 'private-author',
+    target: '07-policy-proposal.md',
+    conflictingEntryIds: [firstVersion.entry_id, secondVersion.entry_id],
+    summary: 'Private Person compared the candidates.',
+  });
+  await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_resolved',
+    actorId: 'private-author',
+    target: '07-policy-proposal.md',
+    conflictEntryId: conflict.entry_id,
+    outcome: 'adopt_current',
+    confirmHuman: true,
+    summary: 'Private Person selected the current version.',
   });
 
   const output = path.join(await tempDirectory(), 'public');
@@ -258,6 +476,9 @@ test('public redaction pseudonymizes private participants and preserves ledger i
   assert.equal(publicStatus.reason, 'public_copy_non_authoritative');
   assert.equal(publicStatus.current_consents.length, 0);
   assert.equal(publicStatus.stale_consents.length, 1);
+  assert.equal(publicStatus.resolved_conflicts.length, 0);
+  assert.equal(publicStatus.unresolved_conflicts.length, 1);
+  assert.equal(publicStatus.unresolved_conflicts[0].stale_resolutions.length, 1);
 });
 
 test('validation rejects tampered ledger content with a file-specific contract error', async () => {

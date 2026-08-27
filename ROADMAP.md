@@ -13,12 +13,12 @@ PR #25에서 다음 범위를 구현했다.
 - #21 기준 종단간 사례
 - #22 ADR
 
-## Phase 4 — 검증된 코어의 선택적 확장
+## Phase 4 — Optional extensions to the verified core
 
-- #26 관할 어댑터 스키마·로더와 KR/US-FED 구현
-- #27 공개 사례 번들·카탈로그와 정책 패턴 재사용
-- #28 협업 역할·기여·동의 원장
-- #29 Phase 4 격리·재현성·보안 테스트
+- #26 jurisdiction adapter schema, loader, and KR/US-FED implementations
+- #27 public case bundles, catalog, and policy-pattern reuse
+- #28 collaboration role, contribution, consent, and conflict ledger
+- #29 Phase 4 isolation, reproducibility, and security contract tests
 
 상위 이슈: #23
 
@@ -32,7 +32,7 @@ PR #25에서 다음 범위를 구현했다.
 
 `#28 + #29 나머지`
 
-협업 기여와 공동 명의 동의를 분리하고 문서 해시에 결합한다.
+Collaboration contributions and joint-attribution consent remain separate and bind to document hashes. Explicit conflict events retain divergent version hashes, require a human resolution, and expire that resolution after a new revision.
 
 ## 유지 조건
 
