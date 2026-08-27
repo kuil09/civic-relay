@@ -228,10 +228,16 @@ export async function validateCaseDirectory(casePath, options = {}) {
             for (const consent of status.stale_consents) {
               findings.push(finding('warning', 'stale_consent', `collaboration.json#/entries/${consent.entry_id}`, `consent no longer matches the current document hash for ${target}`, 'Phase 4.3'));
             }
-            for (const conflict of status.unresolved_conflicts) {
-              findings.push(finding('warning', 'unresolved_collaboration_conflict', `collaboration.json#/entries/${conflict.entry_id}`, `conflict has no human resolution for the current document hash at ${target}`, 'Phase 4.3'));
+            for (const consent of status.non_authoritative_consents) {
+              findings.push(finding('warning', 'non_authoritative_public_consent', `collaboration.json#/entries/${consent.entry_id}`, `consent matches the current document hash for ${target}, but a public copy cannot carry authoritative consent`, 'Phase 4.3'));
             }
             for (const conflict of status.unresolved_conflicts) {
+              findings.push(finding('warning', 'unresolved_collaboration_conflict', `collaboration.json#/entries/${conflict.entry_id}`, `conflict has no authoritative human resolution for the current document hash at ${target}`, 'Phase 4.3'));
+            }
+            for (const conflict of status.unresolved_conflicts) {
+              for (const resolution of conflict.non_authoritative_resolutions) {
+                findings.push(finding('warning', 'non_authoritative_public_conflict_resolution', `collaboration.json#/entries/${resolution.entry_id}`, `conflict resolution matches the current document hash for ${target}, but a public copy cannot carry an authoritative resolution`, 'Phase 4.3'));
+              }
               for (const resolution of conflict.stale_resolutions) {
                 findings.push(finding('warning', 'stale_conflict_resolution', `collaboration.json#/entries/${resolution.entry_id}`, `conflict resolution no longer matches the current document hash for ${target}`, 'Phase 4.3'));
               }

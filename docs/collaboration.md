@@ -13,7 +13,18 @@ The ledger is an ordered list of hash-chained entries. Every entry records:
 - the previous entry hash and the current entry hash; and
 - event-specific payload data.
 
-The supported roles are `case_author`, `evidence_reviewer`, `policy_editor`, `recipient_verifier`, `dispatch_approver`, and `public_release_manager`. Roles describe provenance and expected responsibility. They do not grant authority, imply endorsement, or create consent.
+The supported roles describe provenance and expected responsibility:
+
+| Role | Meaning |
+|---|---|
+| `case_author` | Records authorship and primary case stewardship. |
+| `evidence_reviewer` | Reviews source quality and claim support. |
+| `policy_editor` | Edits options, counterarguments, and policy documents. |
+| `recipient_verifier` | Verifies recipient roles and official channels. |
+| `dispatch_approver` | Records collaboration provenance around delivery review. It does not replace the six case approval stages. |
+| `public_release_manager` | May explicitly represent a registered organization for supported human decisions. |
+
+Roles do not grant authority, imply endorsement, or create consent.
 
 ## Event Types
 
@@ -78,7 +89,7 @@ node src/cli.js collaboration-record cases/example \
   --confirm-human
 ```
 
-Multiple roles or required identities use `|` or comma separators.
+Multiple roles or required identities use `|` or comma separators. Quote pipe-separated values so the shell does not interpret the pipe, for example `--role 'case_author|policy_editor'`. The equivalent comma form is `--role case_author,policy_editor`.
 
 Open and resolve a conflict between two recorded document versions:
 
@@ -122,8 +133,8 @@ An unresolved conflict blocks joint attribution even when every requested identi
 
 `redact` pseudonymizes every participant marked `visibility: "private"`, updates all references to that identity, redacts recognized contact data and secrets in free text, marks the derivative as `public_copy: true`, and rebuilds its hash chain. Public identities remain only when explicitly marked public.
 
-The public policy-pattern bundle still excludes authorship, consent, and representativeness. `collaboration-status` treats every public-copy consent and conflict resolution as non-authoritative, even when the target bytes happen to be unchanged. A public collaboration ledger cannot be reused as a dispatch authorization or as evidence of consent or conflict resolution in another case.
+The public policy-pattern bundle still excludes authorship, consent, and representativeness. `collaboration-status` reports hash freshness separately from authority. A public-copy consent or resolution whose `document_hash` still matches is `hash_current: true` and `authoritative: false`; a record for different bytes is reported in the corresponding stale collection. `authoritative_consents` and `authoritative_resolution` are always empty on a public copy, and `joint_attribution_valid` is always false. A public collaboration ledger cannot be reused as a dispatch authorization or as evidence of consent or conflict resolution in another case.
 
 ## Validation and Failure Modes
 
-`validate` checks the optional ledger when present. It reports the violated contract and `collaboration.json` path for malformed entries, unknown actors, AI-created human decisions, invalid targets, invalid conflict references, and broken hash chains. Stale consent, unresolved conflicts, and stale conflict resolutions are warnings because document revision is legitimate, but none satisfies joint attribution.
+`validate` checks the optional ledger when present. It reports the violated contract and `collaboration.json` path for malformed entries, unknown actors, AI-created human decisions, invalid targets, invalid conflict references, and broken hash chains. Stale consent, unresolved conflicts, and stale conflict resolutions are warnings because document revision is legitimate. Hash-current records on a public copy receive distinct non-authoritative warnings instead of false stale warnings. None satisfies joint attribution.

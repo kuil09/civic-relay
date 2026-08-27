@@ -21,6 +21,32 @@ node src/cli.js publish-case build/example-redacted --output public/example
 node src/cli.js build-library public
 ```
 
+## Readiness contracts
+
+Structural validation and operational readiness are separate contracts. A newly
+initialized intake may be structurally valid and may be built as a review
+preview while still being unready as a case, for sending, or for publication.
+Use the dedicated readiness result for the intended boundary:
+
+```bash
+node src/cli.js readiness cases/example --stage case
+node src/cli.js readiness cases/example --stage send
+node src/cli.js readiness build/example-redacted --stage publication
+```
+
+Case readiness requires a substantive problem definition and desired change,
+claims and sources, legal and authority analysis, stakeholder patterns, a
+status-quo option plus at least three substantive alternatives, and at least
+three strong counterarguments. Send readiness additionally requires current
+official recipients and current human approvals. Publication readiness also
+requires explicit public-export permission and a redaction manifest.
+
+`build` remains available for incomplete review previews. Its manifest reports
+structural validation and readiness independently; neither a successful build
+nor structural validity claims semantic completion. `publish-case` fails closed
+when publication readiness has blockers and reports each blocker with its
+`case.json` pointer or required file.
+
 ## 공개 번들
 
 ```text
@@ -62,6 +88,14 @@ public/example/
 - `redaction-manifest.json` 부재
 - 이메일·전화번호·토큰 잔존
 - 로컬 절대 경로 노출
+- Publication readiness blockers, including missing claims, sources, options,
+  counterarguments, or public-export permission
 - 금지된 사례 고유 필드 포함
 - 무결성 해시 불일치
 - 중복 `publication_id`
+
+`build-library` expects the parent directory whose immediate child directories
+are public bundles. Passing a bundle itself is an error. The index output may be
+placed at the library root or outside it, but never inside a discovered bundle.
+All root, output, and bundle validation happens before the index is written, so
+a rejected invocation does not change bundle bytes.

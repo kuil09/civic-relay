@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { buildLibrary, publishCase, validatePublicBundle } from '../src/lib/library.js';
-import { scanText } from '../src/lib/privacy.js';
+import { promisify } from 'node:util';
+import { publishCase, validatePublicBundle } from '../src/lib/library.js';
+import { redactCase, scanText } from '../src/lib/privacy.js';
+import { repositoryRoot } from './helpers.js';
+
+const execFileAsync = promisify(execFile);
+const cli = path.join(repositoryRoot, 'src', 'cli.js');
+
+function runCli(...args) {
+  return execFileAsync(process.execPath, [cli, ...args], { cwd: repositoryRoot });
+}
 
 async function tempRoot(t) {
   const root = await fs.mkdtemp('/tmp/civic-relay-library-');
@@ -12,51 +22,13 @@ async function tempRoot(t) {
 }
 
 async function createRedactedCase(root, id = 'night-delivery') {
+  const sourcePath = path.join(root, `${id}-source`);
   const casePath = path.join(root, `${id}-redacted`);
-  await fs.mkdir(path.join(casePath, 'build'), { recursive: true });
-  const data = {
-    schema_version: '0.1',
-    case_id: id,
-    title: '심야 하역 제도 개선',
-    jurisdiction: { country: 'KR', region: null, locality: null },
-    original_statement: '[REDACTED_EMAIL]이 제안한 원문',
-    problem_definition: '제도와 현장 운영 사이의 공백을 검토한다.',
-    desired_change: '권한 주체가 복수 대안을 공동 검토한다.',
-    research_questions: ['현행 법적 계층은 무엇인가?', '권리 충돌은 어떻게 평가할 것인가?'],
-    claims: [{ claim_id: 'claim-1', text: '사례 고유 사실', source_ids: ['source-1'] }],
-    sources: [{ source_id: 'source-1', locator: 'https://example.invalid/' }],
-    stakeholders: [
-      { stakeholder_id: 's1', name: '특정 집단', roles: ['rights_holder'], interests: ['접근권'], risks: ['권리 침해'] },
-    ],
-    options: [
-      {
-        option_id: 'o1', title: '시간 제한 시범', category: 'pilot', mechanism: '한정된 시간과 장소에서 시험한다.',
-        legal_change: '명시적 근거 검토', implementer: '특정 기관명', rights_impact: '권리 충돌을 측정한다.',
-        cost: '운영 비용', enforcement_difficulty: 'high', reversibility: 'high', metrics: ['충돌 건수'],
-        stop_conditions: ['권리 침해 발생'], assumptions: ['검증 가능성'],
-      },
-    ],
-    counterarguments: [
-      { counterargument_id: 'c1', argument: '예외가 상시화될 수 있다.', strength: 'strong', source_ids: ['source-1'], response: '종료 조건을 둔다.', residual_risk: '집행 실패' },
-    ],
-    recipients: [{ recipient_id: 'r1', official_channel: '[REDACTED_EMAIL]', channel_source: 'https://example.invalid/' }],
-    approvals: [{ stage: 'document', actor: 'Private Person' }],
-    dispatches: [{ dispatch_key: 'private', provider_message_id: 'private' }],
-    responses: [{ original_file: 'private' }],
-  };
-  await fs.writeFile(path.join(casePath, 'case.json'), `${JSON.stringify(data, null, 2)}\n`);
-  await fs.writeFile(path.join(casePath, '07-policy-proposal.md'), '# 정책 제안\n\n검토 가능한 공개 요약이다.\n');
-  await fs.writeFile(path.join(casePath, 'build', 'one-page-summary.md'), '# 한 페이지 요약\n\n공개 검토용 내용이다.\n');
-  await fs.writeFile(path.join(casePath, 'redaction-manifest.json'), `${JSON.stringify({
-    source: `/tmp/private/${id}`,
-    output: casePath,
-    created_at: '2026-08-27T09:00:00.000Z',
-    files: [
-      { path: 'case.json', copied: false, redactions: { email: 1 } },
-      { path: '07-policy-proposal.md', copied: false, redactions: {} },
-      { path: 'build/one-page-summary.md', copied: false, redactions: {} },
-    ],
-  }, null, 2)}\n`);
+  await fs.cp(path.join(repositoryRoot, 'examples', 'apartment-night-delivery'), sourcePath, { recursive: true });
+  const data = JSON.parse(await fs.readFile(path.join(sourcePath, 'case.json'), 'utf8'));
+  data.case_id = id;
+  await fs.writeFile(path.join(sourcePath, 'case.json'), `${JSON.stringify(data, null, 2)}\n`);
+  await redactCase(sourcePath, casePath);
   return casePath;
 }
 
@@ -67,6 +39,80 @@ async function readCoreBundle(bundle) {
   }
   return output;
 }
+
+async function snapshotDirectory(root) {
+  const snapshot = {};
+  async function visit(current) {
+    for (const entry of (await fs.readdir(current, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+      const absolute = path.join(current, entry.name);
+      if (entry.isDirectory()) await visit(absolute);
+      else if (entry.isFile()) snapshot[path.relative(root, absolute)] = (await fs.readFile(absolute)).toString('base64');
+    }
+  }
+  await visit(root);
+  return snapshot;
+}
+
+test('a fresh intake remains structurally valid and buildable but CLI publication fails readiness', async (t) => {
+  const root = await tempRoot(t);
+  const casesRoot = path.join(root, 'cases');
+  await runCli('init', 'empty-case', '--root', casesRoot, '--statement', 'A civic concern.');
+  const casePath = path.join(casesRoot, 'empty-case');
+  const validation = JSON.parse((await runCli('validate', casePath, '--json')).stdout);
+  assert.equal(validation.valid, true, JSON.stringify(validation.findings));
+  assert.match((await runCli('validate', casePath)).stdout, /STRUCTURALLY VALID/);
+
+  await runCli('build', casePath);
+  const redacted = path.join(root, 'empty-redacted');
+  await runCli('redact', casePath, '--output', redacted);
+  let readinessFailure;
+  try {
+    await runCli('readiness', redacted, '--stage', 'publication');
+  } catch (error) {
+    readinessFailure = error;
+  }
+  assert.ok(readinessFailure, 'publication readiness should fail for a fresh intake');
+  const readiness = JSON.parse(readinessFailure.stdout);
+  assert.equal(readiness.structural_valid, true);
+  assert.equal(readiness.ready, false);
+  const codes = new Set(readiness.findings.map((item) => item.code));
+  for (const code of [
+    'missing_claims',
+    'missing_sources',
+    'missing_status_quo',
+    'insufficient_alternatives',
+    'insufficient_strong_counterarguments',
+  ]) assert.equal(codes.has(code), true, `missing readiness finding ${code}`);
+
+  const bundle = path.join(root, 'public', 'empty-case');
+  await assert.rejects(
+    () => runCli('publish-case', redacted, '--output', bundle),
+    (error) => {
+      assert.match(error.stderr, /publication readiness failed/);
+      assert.match(error.stderr, /case\.json#\/claims \[missing_claims\]/);
+      assert.match(error.stderr, /case\.json#\/sources \[missing_sources\]/);
+      return true;
+    },
+  );
+  await assert.rejects(() => fs.stat(bundle), { code: 'ENOENT' });
+});
+
+test('the complete example validates, builds, redacts, and publishes through the production CLI', async (t) => {
+  const root = await tempRoot(t);
+  const casePath = path.join(root, 'complete-case');
+  await fs.cp(path.join(repositoryRoot, 'examples', 'apartment-night-delivery'), casePath, { recursive: true });
+  const validation = JSON.parse((await runCli('validate', casePath, '--json')).stdout);
+  assert.equal(validation.valid, true, JSON.stringify(validation.findings));
+  await runCli('build', casePath);
+  const redacted = path.join(root, 'complete-redacted');
+  await runCli('redact', casePath, '--output', redacted);
+  const readiness = JSON.parse((await runCli('readiness', redacted, '--stage', 'publication')).stdout);
+  assert.equal(readiness.ready, true, JSON.stringify(readiness.findings));
+  const bundle = path.join(root, 'public', 'complete');
+  const published = JSON.parse((await runCli('publish-case', redacted, '--output', bundle)).stdout);
+  assert.equal(published.public_case.dispatchable, false);
+  assert.equal((await validatePublicBundle(bundle)).valid, true);
+});
 
 test('publishing requires a redacted case and strips case-specific records', async (t) => {
   const root = await tempRoot(t);
@@ -85,14 +131,43 @@ test('publishing requires a redacted case and strips case-specific records', asy
   const publicCase = JSON.parse(await fs.readFile(path.join(bundle, 'public-case.json'), 'utf8'));
   const patterns = JSON.parse(await fs.readFile(path.join(bundle, 'policy-patterns.json'), 'utf8'));
   const sanitizedManifest = JSON.parse(await fs.readFile(path.join(bundle, 'redaction-manifest.json'), 'utf8'));
+  assert.equal(sanitizedManifest.schema_version, '2.0');
+  assert.match(sanitizedManifest.source_snapshot_hash, /^[a-f0-9]{64}$/);
   assert.equal('source' in sanitizedManifest, false);
   assert.equal('output' in sanitizedManifest, false);
+  assert.ok(sanitizedManifest.files.every((item) => !('path' in item)));
+  assert.ok(sanitizedManifest.files.every((item) => ['copied_binary', 'processed_text'].includes(item.handling)));
   for (const prohibited of ['claims', 'sources', 'recipients', 'dispatches', 'responses', 'approvals', 'original_statement']) {
     assert.equal(prohibited in publicCase, false);
     assert.equal(prohibited in patterns, false);
   }
   assert.equal(JSON.stringify(patterns).includes('특정 기관명'), false);
   assert.equal(patterns.reusable_scope, 'design_patterns_only');
+});
+
+test('publication accepts a legacy redaction manifest and removes its local paths', async (t) => {
+  const root = await tempRoot(t);
+  const redacted = await createRedactedCase(root);
+  const manifestPath = path.join(redacted, 'redaction-manifest.json');
+  const versioned = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
+  const legacy = {
+    source: '/tmp/private/night-delivery',
+    output: redacted,
+    created_at: versioned.created_at,
+    files: versioned.files.map((item) => ({
+      path: item.path,
+      copied: item.copied,
+      redactions: item.redactions,
+    })),
+  };
+  await fs.writeFile(manifestPath, `${JSON.stringify(legacy, null, 2)}\n`);
+  const bundle = path.join(root, 'public', 'legacy');
+  await publishCase(redacted, bundle);
+  const sanitized = JSON.parse(await fs.readFile(path.join(bundle, 'redaction-manifest.json'), 'utf8'));
+  assert.equal(sanitized.schema_version, '1.0');
+  assert.equal('source' in sanitized, false);
+  assert.equal('output' in sanitized, false);
+  assert.ok(sanitized.files.every((item) => !('path' in item)));
 });
 
 test('public bundles contain no sensitive data or local absolute paths', async (t) => {
@@ -123,9 +198,9 @@ test('library index contains only valid bundles and remains deterministic', asyn
   const publicRoot = path.join(root, 'public');
   await publishCase(await createRedactedCase(root, 'case-b'), path.join(publicRoot, 'b'));
   await publishCase(await createRedactedCase(root, 'case-a'), path.join(publicRoot, 'a'));
-  const first = await buildLibrary(publicRoot);
+  const first = JSON.parse((await runCli('build-library', publicRoot)).stdout);
   const firstText = await fs.readFile(path.join(publicRoot, 'library.json'), 'utf8');
-  const second = await buildLibrary(publicRoot);
+  const second = JSON.parse((await runCli('build-library', publicRoot)).stdout);
   const secondText = await fs.readFile(path.join(publicRoot, 'library.json'), 'utf8');
   assert.deepEqual(first, second);
   assert.equal(firstText, secondText);
@@ -133,4 +208,39 @@ test('library index contains only valid bundles and remains deterministic', asyn
   assert.deepEqual(first.entries.map((entry) => entry.bundle), ['a', 'b']);
   assert.ok(first.entries.every((entry) => entry.dispatchable === false));
   assert.equal(firstText.includes(root), false);
+});
+
+test('build-library rejects a bundle root through the production CLI without changing bundle bytes', async (t) => {
+  const root = await tempRoot(t);
+  const bundle = path.join(root, 'public', 'example');
+  await publishCase(await createRedactedCase(root), bundle);
+  const before = await snapshotDirectory(bundle);
+  const output = path.join(bundle, 'library');
+  await assert.rejects(
+    () => runCli('build-library', bundle, '--output', output),
+    (error) => {
+      assert.match(error.stderr, /parent directory of public bundles, not a bundle/);
+      return true;
+    },
+  );
+  assert.deepEqual(await snapshotDirectory(bundle), before);
+  await assert.rejects(() => fs.stat(output), { code: 'ENOENT' });
+});
+
+test('build-library rejects output nested in a discovered bundle before writing', async (t) => {
+  const root = await tempRoot(t);
+  const publicRoot = path.join(root, 'public');
+  const bundle = path.join(publicRoot, 'example');
+  await publishCase(await createRedactedCase(root), bundle);
+  const before = await snapshotDirectory(bundle);
+  const output = path.join(bundle, 'nested', 'library.json');
+  await assert.rejects(
+    () => runCli('build-library', publicRoot, '--output', output),
+    (error) => {
+      assert.match(error.stderr, /output must not be inside a public bundle/);
+      return true;
+    },
+  );
+  assert.deepEqual(await snapshotDirectory(bundle), before);
+  await assert.rejects(() => fs.stat(output), { code: 'ENOENT' });
 });

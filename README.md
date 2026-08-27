@@ -23,6 +23,7 @@ Civic Relay는 글쓰기보다 **제도 접근 비용**을 줄인다.
 ```bash
 # 저장소 안에서
 node src/cli.js init apartment-night-delivery \
+  --jurisdiction KR \
   --title "공동주택 심야 물류 하역" \
   --statement "오래된 공동주택의 심야 배송 정차 공간 문제를 검토하고 싶다."
 
@@ -44,8 +45,9 @@ Civic Relay로 새 사례를 시작한다.
 ## 기본 명령
 
 ```bash
-node src/cli.js init <slug> [--title <title>] [--statement <text>]
+node src/cli.js init <slug> [--title <title>] [--statement <text>] [--jurisdiction <adapter-id>]
 node src/cli.js validate <case-path> [--json]
+node src/cli.js readiness <case-path> [--stage case|send|publication]
 node src/cli.js status <case-path>
 node src/cli.js build <case-path>
 node src/cli.js verify-recipients <case-path> [--max-age-hours 24]
@@ -58,6 +60,8 @@ node src/cli.js collaboration-add-participant <case-path> --id <participant-id> 
 node src/cli.js collaboration-record <case-path> --type <event-type> --actor <id> --target <file[#/pointer]>
 node src/cli.js collaboration-status <case-path> --target <file[#/pointer]> [--identity <id|id>]
 ```
+
+`validate` reports structural validity only. Use `readiness --stage case|send|publication` for semantic and operational readiness. `build` may create an incomplete review preview, but its manifest and review document report structural validation and case readiness separately. A successful preview build does not mean the case is ready to publish or send.
 
 `dispatch --mode send`는 기본적으로 비활성화되어 있다. 유효한 6단계 승인, 최신 수신자 검증, 중복 발송 검사, 외부 메일 어댑터가 모두 있어야 실행된다.
 
@@ -72,6 +76,8 @@ node src/cli.js jurisdiction US-FED
 ```
 
 현재 대한민국과 미국 연방정부 어댑터가 포함되어 있다. 어댑터에는 현직자 명단과 직접 연락처를 저장하지 않는다. 공식 조회 경로와 정규화·현재성 검증 규칙만 제공한다. 알 수 없는 관할 ID는 기본 관할로 대체되지 않고 오류가 된다.
+
+`init --jurisdiction <adapter-id>` records the selected adapter in `case.json.jurisdiction.adapter_id`. Omitting the option uses the documented `KR` default and prints that choice; neither the statement language nor the working directory selects a jurisdiction. Use `jurisdictions` before initialization when the applicable jurisdiction is uncertain. An unknown adapter is rejected before any case directory is created.
 
 ## 공개 사례 라이브러리
 
@@ -102,6 +108,8 @@ node src/cli.js collaboration-status cases/example \
 ```
 
 Participation and contribution never imply co-signature consent. Consent is bound to the target document hash, becomes stale when the document changes, and requires explicit human confirmation. Conflicts link earlier entries for different hashes of one target; only a human can resolve them for the current hash, and unresolved conflicts block joint attribution. `collaboration-status` exposes the hash lineage without copying historical document contents into the ledger. `redact` pseudonymizes private participant identities while preserving ledger integrity and making copied consent and resolution records non-authoritative.
+
+The supported roles are `case_author`, `evidence_reviewer`, `policy_editor`, `recipient_verifier`, `dispatch_approver`, and `public_release_manager`. They describe provenance and responsibility, not authority. Event types are `participant_registered`, `contribution`, `review`, `dissent`, `conflict_opened`, `conflict_resolved`, `approval`, `co_sign_consent`, and `consent_withdrawal`. The human-only events are `approval`, `co_sign_consent`, `consent_withdrawal`, and `conflict_resolved`; each requires `--confirm-human`. Conflict outcomes are `adopt_current`, `merged`, and `rejected_change`. For list options such as `--role` and `--identity`, use a comma or a quoted pipe, for example `--role 'case_author|policy_editor'`.
 
 ## 사례 산출물
 
@@ -205,6 +213,7 @@ npm run validate:example
 - [스킬 계약](docs/skill-contract.md)
 - [관할 어댑터](docs/jurisdiction-adapters.md)
 - [공개 사례 라이브러리](docs/public-case-library.md)
+- [Redaction manifest](docs/redaction-manifest.md)
 - [Collaboration ledger](docs/collaboration.md)
 - [로드맵](ROADMAP.md)
 

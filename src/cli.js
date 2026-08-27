@@ -4,15 +4,20 @@ import process from 'node:process';
 import { approveCase } from './lib/approval.js';
 import { buildCase } from './lib/build.js';
 import {
+  COLLABORATION_CONFLICT_OUTCOMES,
+  COLLABORATION_EVENT_TYPES,
+  COLLABORATION_HUMAN_ONLY_EVENTS,
+  COLLABORATION_ROLES,
   collaborationStatus,
   recordCollaborationEvent,
   registerParticipant,
 } from './lib/collaboration.js';
-import { initCase } from './lib/init.js';
+import { DEFAULT_JURISDICTION_ID, initCase } from './lib/init.js';
 import { listJurisdictionAdapters, loadJurisdictionAdapter } from './lib/jurisdiction.js';
 import { buildLibrary, publishCase } from './lib/library.js';
 import { dispatchCase, prepareDrafts } from './lib/mail.js';
 import { redactCase } from './lib/privacy.js';
+import { assessCaseDirectoryReadiness, READINESS_STAGES } from './lib/readiness.js';
 import { verifyRecipients } from './lib/recipients.js';
 import { recordResponse } from './lib/responses.js';
 import { loadCase } from './lib/io.js';
@@ -55,11 +60,13 @@ function listOption(value) {
 }
 
 function printHelp() {
+  const cliNames = (items) => items.map((item) => item.replaceAll('_', '-')).join(', ');
   console.log(`Civic Relay CLI
 
 Commands:
-  init <slug> [--root cases] [--title text] [--statement text]
+  init <slug> [--root cases] [--title text] [--statement text] [--jurisdiction adapter-id]
   validate <case-path> [--json] [--for-send] [--max-age-hours 24]
+  readiness <case-path> [--stage case|send|publication] [--max-age-hours 24]
   status <case-path>
   build <case-path>
   verify-recipients <case-path> [--max-age-hours 24]
@@ -75,6 +82,17 @@ Commands:
   collaboration-record <case-path> --type contribution|review|dissent|conflict-opened|conflict-resolved|approval|co-sign-consent|consent-withdrawal --actor <id> --target <file[#/pointer]> [--identity <id>] [--consent-entry <id>] [--conflicting-entry <id|id>] [--conflict-entry <id>] [--outcome adopt_current|merged|rejected_change] [--confirm-human] [--summary text]
   publish-case <redacted-case-path> --output <path> [--force]
   build-library <public-root> [--output <path>]
+
+Jurisdiction initialization:
+  --jurisdiction accepts an adapter ID listed by "jurisdictions".
+  When omitted, init explicitly uses ${DEFAULT_JURISDICTION_ID}; language and working directory never select a jurisdiction.
+
+Collaboration values:
+  roles: ${COLLABORATION_ROLES.join(', ')}
+  event types: ${cliNames(COLLABORATION_EVENT_TYPES)}
+  human-only event types (require --confirm-human): ${cliNames(COLLABORATION_HUMAN_ONLY_EVENTS)}
+  conflict outcomes: ${COLLABORATION_CONFLICT_OUTCOMES.join(', ')}
+  list options: separate values with a comma or a quoted pipe, for example --role 'case_author|policy_editor'
 `);
 }
 
@@ -85,8 +103,16 @@ async function main() {
 
   if (command === 'init') {
     const slug = required(positionals[0], 'slug');
-    const result = await initCase({ slug, root: options.root || 'cases', title: options.title || slug, statement: options.statement || '<사용자 원문을 입력하세요>' });
-    console.log(result);
+    const jurisdiction = options.jurisdiction || DEFAULT_JURISDICTION_ID;
+    const result = await initCase({
+      slug,
+      root: options.root || 'cases',
+      title: options.title || slug,
+      statement: options.statement || '<사용자 원문을 입력하세요>',
+      jurisdiction,
+    });
+    const source = options.jurisdiction ? 'explicit' : 'documented default';
+    console.log(`${result}\nJurisdiction adapter: ${jurisdiction} (${source})`);
     return;
   }
 
@@ -121,6 +147,20 @@ async function main() {
 
   const casePath = path.resolve(required(positionals[0], 'case path'));
 
+  if (command === 'readiness') {
+    const stage = options.stage || 'case';
+    if (!READINESS_STAGES.includes(stage)) {
+      throw new Error(`--stage must be one of: ${READINESS_STAGES.join(', ')}`);
+    }
+    const result = await assessCaseDirectoryReadiness(casePath, {
+      stage,
+      maxAgeHours: Number(options['max-age-hours'] || 24),
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ready) process.exitCode = 1;
+    return;
+  }
+
   if (command === 'validate') {
     const result = await validateCaseDirectory(casePath, {
       forSend: Boolean(options['for-send']),
@@ -129,7 +169,7 @@ async function main() {
     if (options.json) console.log(JSON.stringify(result, null, 2));
     else {
       for (const item of result.findings) console.log(`${item.severity.toUpperCase()} ${item.code} ${item.path}: ${item.message}`);
-      console.log(result.valid ? 'VALID' : 'INVALID');
+      console.log(result.valid ? 'STRUCTURALLY VALID' : 'STRUCTURALLY INVALID');
     }
     if (!result.valid) process.exitCode = 1;
     return;

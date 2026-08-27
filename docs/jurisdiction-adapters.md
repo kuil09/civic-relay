@@ -47,6 +47,16 @@ TTL은 사실이 자동으로 틀렸다는 의미가 아니라, 외부 전달 �
 
 대한민국과 미국 연방정부는 법적 계층, 의회 구조, 행정 규칙의 형식이 다르다. 두 어댑터가 같은 코어 계약을 통과하게 함으로써 대한민국의 제도 명칭을 공통 모델로 오인하는 것을 방지한다.
 
+## Case Initialization
+
+Select the adapter explicitly when creating a case:
+
+```bash
+node src/cli.js init example-case --jurisdiction US-FED
+```
+
+The selected ID is stored as `case.json.jurisdiction.adapter_id`. For legacy compatibility the field is optional in the schema, so cases created before this field was introduced remain valid. When `--jurisdiction` is omitted, the CLI uses the documented `KR` default and reports that decision. It never infers jurisdiction from language, current directory, or locale. Adapter validation happens before case directory creation, so an invalid or unknown ID leaves no partial case.
+
 ## 확장 절차
 
 1. `schemas/jurisdiction-adapter.schema.json`을 따른 JSON 파일을 만든다.

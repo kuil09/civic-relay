@@ -18,6 +18,7 @@
 | `schema_version` | 데이터 모델 버전 |
 | `case_id` | 사례 안정 식별자 |
 | `status` | 현재 단계 |
+| `jurisdiction.adapter_id` | Adapter selected by `init --jurisdiction`; optional only for legacy cases |
 | `original_statement` | 사용자의 최초 원문 |
 | `problem_definition` | 조사 가능한 문제 정의 |
 | `claims` | 관찰·사실·추론·가치 판단·제안 |

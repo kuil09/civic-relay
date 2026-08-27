@@ -11,7 +11,8 @@ import {
   writeJsonAtomic,
   writeTextAtomic,
 } from './io.js';
-import { scanText } from './privacy.js';
+import { scanLocalPaths, scanText } from './privacy.js';
+import { assessCaseDirectoryReadiness } from './readiness.js';
 
 const PUBLIC_FILES = [
   'public-case.json',
@@ -55,21 +56,30 @@ function sanitizeRedactionManifest(manifest) {
     throw new Error('redaction manifest requires a valid created_at');
   }
   if (!Array.isArray(manifest.files)) throw new Error('redaction manifest requires files');
-  return {
-    schema_version: '1.0',
+  const sanitized = {
+    schema_version: manifest.schema_version === '2.0' ? '2.0' : '1.0',
     created_at: manifest.created_at,
     files: manifest.files
       .map((item) => {
         const originalPath = toPosix(String(item.path || ''));
-        return {
+        const sanitizedItem = {
           file_ref: sha256(originalPath).slice(0, 16),
           category: redactionCategory(originalPath),
           copied: Boolean(item.copied),
           redactions: isPlainObject(item.redactions) ? item.redactions : {},
         };
+        if (manifest.schema_version === '2.0') {
+          sanitizedItem.handling = item.handling;
+          sanitizedItem.redacted = Boolean(item.redacted);
+          sanitizedItem.source_hash = item.source_hash;
+          sanitizedItem.output_hash = item.output_hash;
+        }
+        return sanitizedItem;
       })
       .sort((a, b) => a.file_ref.localeCompare(b.file_ref)),
   };
+  if (manifest.schema_version === '2.0') sanitized.source_snapshot_hash = manifest.source_snapshot_hash;
+  return sanitized;
 }
 
 function assertSafeRelativePath(value, label) {
@@ -79,15 +89,7 @@ function assertSafeRelativePath(value, label) {
 }
 
 function looksLikeLocalAbsolutePath(value) {
-  if (typeof value !== 'string') return false;
-  return value.startsWith('/Users/')
-    || value.startsWith('/home/')
-    || value.startsWith('/tmp/')
-    || value.startsWith('/mnt/')
-    || value.startsWith('/private/')
-    || value.startsWith('/var/tmp/')
-    || value.startsWith('file://')
-    || /^[A-Za-z]:[\\/]/.test(value);
+  return typeof value === 'string' && scanLocalPaths(value).length > 0;
 }
 
 function inspectPublicValue(value, pointer, errors) {
@@ -117,8 +119,10 @@ async function scanDirectoryForSensitiveData(root, options = {}) {
     }
     const relative = toPosix(path.relative(root, file));
     const allowExpectedPaths = allowRedactionManifestPaths && relative === 'redaction-manifest.json';
-    if (!allowExpectedPaths && (/\/(?:Users|home|tmp|mnt|private|var\/tmp)\//.test(text) || /file:\/\//i.test(text) || /[A-Za-z]:\\Users\\/.test(text))) {
-      findings.push({ path: relative, kind: 'privacy', label: 'local-path' });
+    if (!allowExpectedPaths) {
+      for (const localPath of scanLocalPaths(text)) {
+        findings.push({ path: relative, kind: 'privacy', label: localPath.label });
+      }
     }
   }
   return findings;
@@ -226,16 +230,15 @@ export async function publishCase(redactedCasePath, outputPath, options = {}) {
   const manifestFile = path.join(redactedCasePath, 'redaction-manifest.json');
   if (!(await pathExists(manifestFile))) throw new Error('publish blocked: redaction-manifest.json is required');
   if (!(await pathExists(path.join(redactedCasePath, 'case.json')))) throw new Error('publish blocked: case.json is required');
+  const readiness = await assessCaseDirectoryReadiness(redactedCasePath, { stage: 'publication' });
+  if (!readiness.ready) {
+    const details = readiness.findings.map((item) => `${item.path} [${item.code}]: ${item.message}`);
+    throw new Error(`publish blocked: publication readiness failed: ${details.join('; ')}`);
+  }
   const sensitive = await scanDirectoryForSensitiveData(redactedCasePath, { allowRedactionManifestPaths: true });
   if (sensitive.length) {
     throw new Error(`publish blocked: redacted case still contains sensitive data: ${JSON.stringify(sensitive)}`);
   }
-  if (await pathExists(outputPath)) {
-    if (!force) throw new Error(`output already exists: ${outputPath}`);
-    await fs.rm(outputPath, { recursive: true, force: true });
-  }
-  await ensureDir(outputPath);
-
   const rawManifest = await readJson(manifestFile);
   const redactionManifest = sanitizeRedactionManifest(rawManifest);
   const data = await readJson(path.join(redactedCasePath, 'case.json'));
@@ -265,6 +268,12 @@ export async function publishCase(redactedCasePath, outputPath, options = {}) {
   inspectPublicValue(publicCase, '', publicErrors);
   inspectPublicValue(policyPatterns, '', publicErrors);
   if (publicErrors.length) throw new Error(`publish blocked: ${publicErrors.join('; ')}`);
+
+  if (await pathExists(outputPath)) {
+    if (!force) throw new Error(`output already exists: ${outputPath}`);
+    await fs.rm(outputPath, { recursive: true, force: true });
+  }
+  await ensureDir(outputPath);
 
   await writeJsonAtomic(path.join(outputPath, 'public-case.json'), publicCase);
   await writeTextAtomic(path.join(outputPath, 'summary.md'), await chooseSummary(redactedCasePath, data));
@@ -331,12 +340,24 @@ export async function validatePublicBundle(bundlePath) {
 export async function buildLibrary(publicRoot, outputFile = path.join(publicRoot, 'library.json')) {
   const entries = [];
   const seen = new Set();
-  if (!(await pathExists(publicRoot))) throw new Error(`public library root does not exist: ${publicRoot}`);
-  const directories = (await fs.readdir(publicRoot, { withFileTypes: true }))
+  const resolvedRoot = path.resolve(publicRoot);
+  const resolvedOutput = path.resolve(outputFile);
+  if (!(await pathExists(resolvedRoot))) throw new Error(`public library root does not exist: ${resolvedRoot}`);
+  if (await pathExists(path.join(resolvedRoot, 'public-case.json'))) {
+    throw new Error(`public library root must be the parent directory of public bundles, not a bundle: ${resolvedRoot}`);
+  }
+  const directories = (await fs.readdir(resolvedRoot, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
     .sort((a, b) => a.name.localeCompare(b.name));
   for (const directory of directories) {
-    const bundlePath = path.join(publicRoot, directory.name);
+    const bundlePath = path.join(resolvedRoot, directory.name);
+    const relativeOutput = path.relative(bundlePath, resolvedOutput);
+    if (relativeOutput === '' || (!relativeOutput.startsWith('..') && !path.isAbsolute(relativeOutput))) {
+      throw new Error(`library output must not be inside a public bundle: ${resolvedOutput}; choose the library root or a path outside ${bundlePath}`);
+    }
+  }
+  for (const directory of directories) {
+    const bundlePath = path.join(resolvedRoot, directory.name);
     const validation = await validatePublicBundle(bundlePath);
     if (!validation.valid) throw new Error(`invalid public bundle ${directory.name}: ${validation.errors.join('; ')}`);
     const data = await readJson(path.join(bundlePath, 'public-case.json'));
@@ -358,6 +379,6 @@ export async function buildLibrary(publicRoot, outputFile = path.join(publicRoot
   const publicErrors = [];
   inspectPublicValue(library, '', publicErrors);
   if (publicErrors.length) throw new Error(`library index is not public: ${publicErrors.join('; ')}`);
-  await writeJsonAtomic(outputFile, library);
+  await writeJsonAtomic(resolvedOutput, library);
   return library;
 }

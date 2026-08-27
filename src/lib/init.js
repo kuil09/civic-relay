@@ -1,6 +1,9 @@
 import path from 'node:path';
 import { SCHEMA_VERSION } from './constants.js';
 import { assertCaseSlug, ensureDir, nowIso, pathExists, writeJsonAtomic, writeTextAtomic } from './io.js';
+import { loadJurisdictionAdapter } from './jurisdiction.js';
+
+export const DEFAULT_JURISDICTION_ID = 'KR';
 
 const EMPTY_DOCUMENTS = {
   '01-issue-brief.md': '# Issue Brief\n\n## 문제 현상\n\n## 원인 가설\n\n## 피해·비용·권리 영향\n\n## 관할과 범위\n\n## 사용자가 원하는 변화\n\n## 조사 질문\n',
@@ -14,8 +17,16 @@ const EMPTY_DOCUMENTS = {
 };
 
 export async function initCase(options) {
-  const { slug, root = 'cases', title = slug, statement = '<사용자 원문을 입력하세요>' } = options;
+  const {
+    slug,
+    root = 'cases',
+    title = slug,
+    statement = '<사용자 원문을 입력하세요>',
+    jurisdiction = DEFAULT_JURISDICTION_ID,
+    jurisdictionRoot,
+  } = options;
   assertCaseSlug(slug);
+  const adapter = await loadJurisdictionAdapter(jurisdiction, { root: jurisdictionRoot });
   const casePath = path.resolve(root, slug);
   if (await pathExists(casePath)) throw new Error(`case already exists: ${casePath}`);
   await ensureDir(casePath);
@@ -28,7 +39,12 @@ export async function initCase(options) {
     case_id: slug,
     title,
     status: 'intake',
-    jurisdiction: { country: 'KR', region: null, locality: null },
+    jurisdiction: {
+      adapter_id: adapter.id,
+      country: adapter.id.split('-')[0],
+      region: null,
+      locality: null,
+    },
     original_statement: statement,
     problem_definition: '',
     desired_change: '',

@@ -33,10 +33,23 @@ export const COLLABORATION_EVENT_TYPES = [
   'consent_withdrawal',
 ];
 
+export const COLLABORATION_HUMAN_ONLY_EVENTS = [
+  'approval',
+  'co_sign_consent',
+  'consent_withdrawal',
+  'conflict_resolved',
+];
+
+export const COLLABORATION_CONFLICT_OUTCOMES = [
+  'adopt_current',
+  'merged',
+  'rejected_change',
+];
+
 const PARTICIPANT_KINDS = new Set(['human', 'ai', 'organization']);
 const VISIBILITIES = new Set(['public', 'private']);
-const HUMAN_ONLY_EVENTS = new Set(['approval', 'co_sign_consent', 'consent_withdrawal', 'conflict_resolved']);
-const CONFLICT_OUTCOMES = new Set(['adopt_current', 'merged', 'rejected_change']);
+const HUMAN_ONLY_EVENTS = new Set(COLLABORATION_HUMAN_ONLY_EVENTS);
+const CONFLICT_OUTCOMES = new Set(COLLABORATION_CONFLICT_OUTCOMES);
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const AI_LABEL = /(^|\b)(ai|assistant|agent|model|chatgpt|gpt|claude|codex)(\b|$)/i;
@@ -463,9 +476,12 @@ export async function collaborationStatus(casePath, options = {}) {
   if (!ledger) {
     return {
       enabled: false,
+      public_copy: false,
       target: options.target || null,
       participants: [],
       current_consents: [],
+      authoritative_consents: [],
+      non_authoritative_consents: [],
       stale_consents: [],
       withdrawn_consents: [],
       document_versions: [],
@@ -477,6 +493,7 @@ export async function collaborationStatus(casePath, options = {}) {
   }
   const target = String(options.target || '');
   const currentHash = await computeCollaborationTargetHash(casePath, target);
+  const publicCopy = ledger.public_copy === true;
   const participants = participantRegistrations(ledger);
   const withdrawn = new Set(
     ledger.entries
@@ -485,16 +502,23 @@ export async function collaborationStatus(casePath, options = {}) {
   );
   const consents = ledger.entries
     .filter((entry) => entry.event_type === 'co_sign_consent' && entry.target === target)
-    .map((entry) => ({
-      entry_id: entry.entry_id,
-      actor_id: entry.actor_id,
-      identity_id: entry.payload.identity_id,
-      document_hash: entry.document_hash,
-      occurred_at: entry.occurred_at,
-      withdrawn: withdrawn.has(entry.entry_id),
-      current: entry.document_hash === currentHash && ledger.public_copy !== true,
-    }));
+    .map((entry) => {
+      const hashCurrent = entry.document_hash === currentHash;
+      return {
+        entry_id: entry.entry_id,
+        actor_id: entry.actor_id,
+        identity_id: entry.payload.identity_id,
+        document_hash: entry.document_hash,
+        occurred_at: entry.occurred_at,
+        withdrawn: withdrawn.has(entry.entry_id),
+        current: hashCurrent,
+        hash_current: hashCurrent,
+        authoritative: hashCurrent && !publicCopy,
+      };
+    });
   const currentConsents = consents.filter((entry) => entry.current && !entry.withdrawn);
+  const authoritativeConsents = currentConsents.filter((entry) => entry.authoritative);
+  const nonAuthoritativeConsents = currentConsents.filter((entry) => !entry.authoritative);
   const staleConsents = consents.filter((entry) => !entry.current && !entry.withdrawn);
   const withdrawnConsents = consents.filter((entry) => entry.withdrawn);
   const targetEntries = ledger.entries.filter((entry) => entry.target === target);
@@ -517,15 +541,21 @@ export async function collaborationStatus(casePath, options = {}) {
     .map((entry) => {
       const resolutions = resolutionEntries
         .filter((candidate) => candidate.payload.conflict_entry_id === entry.entry_id)
-        .map((candidate) => ({
-          entry_id: candidate.entry_id,
-          actor_id: candidate.actor_id,
-          document_hash: candidate.document_hash,
-          occurred_at: candidate.occurred_at,
-          outcome: candidate.payload.outcome,
-          current: candidate.document_hash === currentHash && ledger.public_copy !== true,
-        }));
+        .map((candidate) => {
+          const hashCurrent = candidate.document_hash === currentHash;
+          return {
+            entry_id: candidate.entry_id,
+            actor_id: candidate.actor_id,
+            document_hash: candidate.document_hash,
+            occurred_at: candidate.occurred_at,
+            outcome: candidate.payload.outcome,
+            current: hashCurrent,
+            hash_current: hashCurrent,
+            authoritative: hashCurrent && !publicCopy,
+          };
+        });
       const currentResolution = resolutions.filter((candidate) => candidate.current).at(-1) || null;
+      const authoritativeResolution = resolutions.filter((candidate) => candidate.authoritative).at(-1) || null;
       return {
         entry_id: entry.entry_id,
         actor_id: entry.actor_id,
@@ -535,16 +565,18 @@ export async function collaborationStatus(casePath, options = {}) {
           .map((entryId) => ledger.entries.find((candidate) => candidate.entry_id === entryId)?.document_hash)
           .filter(Boolean),
         current_resolution: currentResolution,
+        authoritative_resolution: authoritativeResolution,
+        non_authoritative_resolutions: resolutions.filter((candidate) => candidate.current && !candidate.authoritative),
         stale_resolutions: resolutions.filter((candidate) => !candidate.current),
       };
     });
-  const resolvedConflicts = conflicts.filter((conflict) => conflict.current_resolution);
-  const unresolvedConflicts = conflicts.filter((conflict) => !conflict.current_resolution);
+  const resolvedConflicts = conflicts.filter((conflict) => conflict.authoritative_resolution);
+  const unresolvedConflicts = conflicts.filter((conflict) => !conflict.authoritative_resolution);
   const requiredIdentities = [...new Set(options.requiredIdentities || [])];
-  const currentIdentityIds = new Set(currentConsents.map((entry) => entry.identity_id));
-  const missingIdentities = requiredIdentities.filter((identity) => !currentIdentityIds.has(identity));
+  const authoritativeIdentityIds = new Set(authoritativeConsents.map((entry) => entry.identity_id));
+  const missingIdentities = requiredIdentities.filter((identity) => !authoritativeIdentityIds.has(identity));
   let reason = 'valid';
-  if (ledger.public_copy === true) reason = 'public_copy_non_authoritative';
+  if (publicCopy) reason = 'public_copy_non_authoritative';
   else if (requiredIdentities.length === 0) reason = 'required_identities_missing';
   else if (missingIdentities.length) reason = 'explicit_current_consent_missing';
   else if (unresolvedConflicts.length) reason = 'unresolved_conflicts';
@@ -553,8 +585,11 @@ export async function collaborationStatus(casePath, options = {}) {
     enabled: true,
     target,
     current_document_hash: currentHash,
+    public_copy: publicCopy,
     participants: [...participants.entries()].map(([participant_id, participant]) => ({ participant_id, ...participant })),
     current_consents: currentConsents,
+    authoritative_consents: authoritativeConsents,
+    non_authoritative_consents: nonAuthoritativeConsents,
     stale_consents: staleConsents,
     withdrawn_consents: withdrawnConsents,
     document_versions: [...versionsByHash.values()],
@@ -562,7 +597,7 @@ export async function collaborationStatus(casePath, options = {}) {
     unresolved_conflicts: unresolvedConflicts,
     required_identities: requiredIdentities,
     missing_identities: missingIdentities,
-    joint_attribution_valid: ledger.public_copy !== true
+    joint_attribution_valid: !publicCopy
       && requiredIdentities.length > 0
       && missingIdentities.length === 0
       && unresolvedConflicts.length === 0,

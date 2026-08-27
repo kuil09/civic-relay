@@ -66,6 +66,15 @@ test('the existing CLI validates a case without public or collaboration features
   assert.equal(JSON.parse(stdout).valid, true);
 });
 
+test('CLI help exposes collaboration roles, events, human-only boundaries, outcomes, and list syntax', async () => {
+  const { stdout } = await execFileAsync(process.execPath, [path.join(repositoryRoot, 'src', 'cli.js'), '--help']);
+  assert.match(stdout, /roles: case_author, evidence_reviewer, policy_editor/);
+  assert.match(stdout, /event types: participant-registered, contribution, review, dissent, conflict-opened/);
+  assert.match(stdout, /human-only event types \(require --confirm-human\): approval, co-sign-consent, consent-withdrawal, conflict-resolved/);
+  assert.match(stdout, /conflict outcomes: adopt_current, merged, rejected_change/);
+  assert.match(stdout, /separate values with a comma or a quoted pipe/);
+});
+
 test('the CLI records and resolves a conflict through the production entrypoint', async () => {
   const casePath = await createCase('conflict-cli');
   const cli = path.join(repositoryRoot, 'src', 'cli.js');
@@ -455,6 +464,32 @@ test('public redaction pseudonymizes private participants and preserves ledger i
     confirmHuman: true,
     summary: 'Private Person selected the current version.',
   });
+  await recordCollaborationEvent(casePath, {
+    eventType: 'co_sign_consent',
+    actorId: 'private-author',
+    identityId: 'private-author',
+    target: '07-policy-proposal.md',
+    confirmHuman: true,
+    summary: 'Private Person consents to the current version.',
+  });
+  await fs.appendFile(path.join(casePath, '07-policy-proposal.md'), '\nFinal public candidate revision.\n');
+  await recordCollaborationEvent(casePath, {
+    eventType: 'conflict_resolved',
+    actorId: 'private-author',
+    target: '07-policy-proposal.md',
+    conflictEntryId: conflict.entry_id,
+    outcome: 'merged',
+    confirmHuman: true,
+    summary: 'Private Person resolved the conflict for the final version.',
+  });
+  await recordCollaborationEvent(casePath, {
+    eventType: 'co_sign_consent',
+    actorId: 'private-author',
+    identityId: 'private-author',
+    target: '07-policy-proposal.md',
+    confirmHuman: true,
+    summary: 'Private Person consents to the final version.',
+  });
 
   const output = path.join(await tempDirectory(), 'public');
   await redactCase(casePath, output);
@@ -474,11 +509,24 @@ test('public redaction pseudonymizes private participants and preserves ledger i
   });
   assert.equal(publicStatus.joint_attribution_valid, false);
   assert.equal(publicStatus.reason, 'public_copy_non_authoritative');
-  assert.equal(publicStatus.current_consents.length, 0);
-  assert.equal(publicStatus.stale_consents.length, 1);
+  assert.equal(publicStatus.current_consents.length, 1);
+  assert.equal(publicStatus.current_consents[0].hash_current, true);
+  assert.equal(publicStatus.current_consents[0].authoritative, false);
+  assert.equal(publicStatus.authoritative_consents.length, 0);
+  assert.equal(publicStatus.non_authoritative_consents.length, 1);
+  assert.equal(publicStatus.stale_consents.length, 2);
   assert.equal(publicStatus.resolved_conflicts.length, 0);
   assert.equal(publicStatus.unresolved_conflicts.length, 1);
+  assert.equal(publicStatus.unresolved_conflicts[0].current_resolution.hash_current, true);
+  assert.equal(publicStatus.unresolved_conflicts[0].current_resolution.authoritative, false);
+  assert.equal(publicStatus.unresolved_conflicts[0].authoritative_resolution, null);
+  assert.equal(publicStatus.unresolved_conflicts[0].non_authoritative_resolutions.length, 1);
   assert.equal(publicStatus.unresolved_conflicts[0].stale_resolutions.length, 1);
+
+  const publicValidation = await validateCaseDirectory(output);
+  assert(publicValidation.findings.some((item) => item.code === 'non_authoritative_public_consent'));
+  assert(publicValidation.findings.some((item) => item.code === 'non_authoritative_public_conflict_resolution'));
+  assert(publicValidation.findings.some((item) => item.code === 'stale_conflict_resolution'));
 });
 
 test('validation rejects tampered ledger content with a file-specific contract error', async () => {

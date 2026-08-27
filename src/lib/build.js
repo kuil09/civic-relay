@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { computeDocumentHash, hashFile } from './hash.js';
 import { ensureDir, loadCase, nowIso, pathExists, saveCase, writeJsonAtomic, writeTextAtomic } from './io.js';
+import { assessCaseReadiness } from './readiness.js';
 import { validateCaseDirectory } from './validate.js';
 
 function bullet(values, empty = '- 미정') {
@@ -10,6 +11,19 @@ function bullet(values, empty = '- 미정') {
 
 function selectedCategories(recipients) {
   return [...new Set((recipients || []).filter((item) => item.selected).map((item) => item.organization))];
+}
+
+function canonicalArtifacts(existing, currentBuild) {
+  const byIdentity = new Map();
+  for (const artifact of existing || []) {
+    if (artifact.kind !== 'build') byIdentity.set(`${artifact.kind}\0${artifact.path}`, artifact);
+  }
+  for (const artifact of currentBuild) {
+    byIdentity.set(`${artifact.kind}\0${artifact.path}`, artifact);
+  }
+  return [...byIdentity.values()].sort((left, right) => (
+    left.kind.localeCompare(right.kind) || left.path.localeCompare(right.path)
+  ));
 }
 
 export async function buildCase(casePath) {
@@ -65,12 +79,16 @@ ${bullet(organizations)}
   await writeTextAtomic(path.join(buildPath, 'distribution-notice.md'), distribution);
 
   const validation = await validateCaseDirectory(casePath, { scanSensitive: true });
+  const readiness = assessCaseReadiness(data, { stage: 'case' });
   const findingLines = validation.findings.length
     ? validation.findings.map((item) => `- **${item.severity.toUpperCase()} ${item.code}** — \`${item.path}\`: ${item.message}`).join('\n')
     : '- 구조 검증에서 발견된 항목 없음';
   const approvalLines = (data.approvals || []).length
     ? data.approvals.map((item) => `- ${item.stage}: ${item.actor}, ${item.approved_at}, \`${item.content_hash.slice(0, 12)}…\``).join('\n')
     : '- 승인 없음';
+  const readinessLines = readiness.findings.length
+    ? readiness.findings.map((item) => `- **${item.code}** — \`${item.path}\`: ${item.message}`).join('\n')
+    : '- No semantic readiness blockers';
   const review = `# ${data.title} — Review
 
 ## 원문
@@ -88,6 +106,13 @@ ${data.original_statement}
 ## 검증 결과
 
 ${findingLines}
+
+## Semantic Readiness
+
+- Structural validation: ${validation.valid ? 'valid' : 'invalid'}
+- Case readiness: ${readiness.ready ? 'ready' : 'not ready'}
+
+${readinessLines}
 
 ## 승인 이력
 
@@ -123,17 +148,20 @@ ${approvalLines}
     document_hash: documentHash,
     files,
     validation: {
+      contract: 'structural_validation',
       valid: validation.valid,
       errors: validation.findings.filter((item) => item.severity === 'error').length,
       warnings: validation.findings.filter((item) => item.severity === 'warning').length,
     },
+    readiness,
   };
   await writeJsonAtomic(path.join(buildPath, 'package-manifest.json'), manifest);
 
-  data.artifacts = (data.artifacts || []).filter((item) => !item.path.startsWith('build/'));
+  const currentBuildArtifacts = [];
   for (const file of [...files, { path: 'build/package-manifest.json', hash: await hashFile(path.join(buildPath, 'package-manifest.json')) }]) {
-    data.artifacts.push({ path: file.path, kind: 'build', hash: file.hash, generated_at: manifest.built_at });
+    currentBuildArtifacts.push({ path: file.path, kind: 'build', hash: file.hash, generated_at: manifest.built_at });
   }
+  data.artifacts = canonicalArtifacts(data.artifacts, currentBuildArtifacts);
   await saveCase(casePath, data);
   return manifest;
 }

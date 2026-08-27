@@ -32,5 +32,12 @@
 | 11. Legacy cases work without Phase 4 files | optional collaboration and public-library boundaries | `tests/collaboration.test.js`, existing MVP tests |
 | 12. Existing CLI works without public or collaboration features | unchanged core commands and optional imports | `tests/collaboration.test.js` CLI process test |
 | Public collaboration privacy | pseudonymization, `public_copy` authority block, and ledger re-chaining | `tests/collaboration.test.js` |
+| Structural validity is not semantic completion | dedicated case, send, and publication readiness contracts; preview builds remain available | `tests/library.test.js` |
+| Empty patterns cannot be published | publication readiness rejects missing claims, sources, policy alternatives, and strong counterarguments through the production CLI | `tests/library.test.js` |
+| Library aggregation cannot mutate a bundle | bundle-root and nested-output preflight checks run before any index write | `tests/library.test.js` |
+| Initialization selects a verified jurisdiction | explicit adapter ID, documented KR default, and pre-create rejection | `tests/init-and-validation.test.js` |
+| Redacted derivatives expose no local roots | path-free manifest v2 with relative file references and source/output hashes | `tests/privacy-and-response.test.js`, `tests/library.test.js` |
+| Public collaboration freshness is not authority | separate hash-current, authoritative, non-authoritative, and stale status collections | `tests/collaboration.test.js` |
+| Collaboration CLI values are discoverable | help output lists roles, event types, human-only events, outcomes, and list syntax | `tests/collaboration.test.js` |
 | Phase 4 conflict resolution | divergent-hash conflict references, human-only outcomes, revision expiry, and joint-attribution block | `tests/collaboration.test.js` |
 | Phase 4 document version lineage | ordered target hashes and attesting entry IDs exposed by collaboration status | `tests/collaboration.test.js` |
