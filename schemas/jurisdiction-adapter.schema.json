@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civic-relay.dev/schemas/jurisdiction-adapter.schema.json",
+  "title": "Civic Relay Jurisdiction Adapter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "scope",
+    "default_locale",
+    "default_timezone",
+    "legal_layers",
+    "authority_types",
+    "official_sources",
+    "recipient_roles",
+    "normalization",
+    "verification_policy"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "scope": { "type": "string", "minLength": 1 },
+    "default_locale": { "type": "string", "minLength": 2 },
+    "default_timezone": { "type": "string", "minLength": 1 },
+    "legal_layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "rank", "authority", "official_source_ids"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "rank": { "type": "integer" },
+          "authority": { "type": "string", "minLength": 1 },
+          "official_source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "authority_types": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "capabilities"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "official_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "name", "base_url", "authority", "purposes", "verification"],
+        "properties": {
+          "source_id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "base_url": { "type": "string", "pattern": "^https://" },
+          "authority": { "enum": ["primary", "authoritative", "reference"] },
+          "purposes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "verification": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["freshness_hours", "requires_checked_at"],
+            "properties": {
+              "freshness_hours": { "type": "number", "exclusiveMinimum": 0 },
+              "requires_checked_at": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    "recipient_roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "authority_type", "resolver_source_ids", "allowed_channels"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "authority_type": { "type": "string", "minLength": 1 },
+          "resolver_source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "allowed_channels": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locale", "timezone", "date_format", "title_case", "channel_schemes"],
+      "properties": {
+        "locale": { "type": "string", "minLength": 2 },
+        "timezone": { "type": "string", "minLength": 1 },
+        "date_format": { "type": "string", "minLength": 1 },
+        "title_case": { "type": "string", "minLength": 1 },
+        "channel_schemes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "verification_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recipient_ttl_hours", "law_ttl_hours", "official_source_required", "unknown_id_policy"],
+      "properties": {
+        "recipient_ttl_hours": { "type": "number", "exclusiveMinimum": 0 },
+        "law_ttl_hours": { "type": "number", "exclusiveMinimum": 0 },
+        "official_source_required": { "const": true },
+        "unknown_id_policy": { "const": "error" }
+      }
+    }
+  }
+}

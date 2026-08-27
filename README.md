@@ -58,6 +58,30 @@ node src/cli.js redact <case-path> [--output <path>]
 
 `dispatch --mode send`는 기본적으로 비활성화되어 있다. 유효한 6단계 승인, 최신 수신자 검증, 중복 발송 검사, 외부 메일 어댑터가 모두 있어야 실행된다.
 
+## 관할 어댑터
+
+법체계·의회·행정부·공식 자료원은 관할 어댑터로 분리한다.
+
+```bash
+node src/cli.js jurisdictions
+node src/cli.js jurisdiction KR
+node src/cli.js jurisdiction US-FED
+```
+
+현재 대한민국과 미국 연방정부 어댑터가 포함되어 있다. 어댑터에는 현직자 명단과 직접 연락처를 저장하지 않는다. 공식 조회 경로와 정규화·현재성 검증 규칙만 제공한다. 알 수 없는 관할 ID는 기본 관할로 대체되지 않고 오류가 된다.
+
+## 공개 사례 라이브러리
+
+익명화된 사례는 실제 발송과 분리된 정적 공개 번들로 만들 수 있다.
+
+```bash
+node src/cli.js redact cases/example --output build/example-redacted
+node src/cli.js publish-case build/example-redacted --output public/example
+node src/cli.js build-library public
+```
+
+공개 번들의 `dispatchable` 값은 항상 `false`다. 재사용 대상은 문제 프레임·조사 질문·이해관계자 역할·정책 대안·반론 패턴이다. 원 사례의 사실·출처·수신자·발송·회신·동의는 새 사례로 이전되지 않는다.
+
 ## 사례 산출물
 
 ```text
@@ -126,6 +150,7 @@ cases/<case-slug>/
 - 사용자가 명시적으로 승인하지 않은 문장은 보내지 않는다.
 - 동일 사례·문서·수신자의 반복 발송을 차단한다.
 - 실제 이메일·토큰·개인 사례는 저장소에 커밋하지 않는다.
+- 공개 사례는 사실 데이터베이스나 발송 목록으로 사용하지 않는다.
 
 ## 대표 예제
 
@@ -156,6 +181,8 @@ npm run validate:example
 - [에이전트 운영 계약](AGENTS.md)
 - [데이터 모델](docs/data-model.md)
 - [스킬 계약](docs/skill-contract.md)
+- [관할 어댑터](docs/jurisdiction-adapters.md)
+- [공개 사례 라이브러리](docs/public-case-library.md)
 - [로드맵](ROADMAP.md)
 
 ## 라이선스

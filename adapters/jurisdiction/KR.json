@@ -1,0 +1,164 @@
+{
+  "schema_version": "1.0",
+  "id": "KR",
+  "name": "대한민국",
+  "scope": "national",
+  "default_locale": "ko-KR",
+  "default_timezone": "Asia/Seoul",
+  "legal_layers": [
+    {
+      "id": "constitution",
+      "label": "헌법",
+      "rank": 100,
+      "authority": "constitutional",
+      "official_source_ids": ["kr-law"]
+    },
+    {
+      "id": "statute",
+      "label": "법률",
+      "rank": 90,
+      "authority": "legislature",
+      "official_source_ids": ["kr-law", "kr-assembly"]
+    },
+    {
+      "id": "presidential_decree",
+      "label": "대통령령",
+      "rank": 80,
+      "authority": "executive",
+      "official_source_ids": ["kr-law"]
+    },
+    {
+      "id": "ministerial_rule",
+      "label": "총리령·부령",
+      "rank": 70,
+      "authority": "executive",
+      "official_source_ids": ["kr-law"]
+    },
+    {
+      "id": "local_ordinance",
+      "label": "조례·규칙",
+      "rank": 60,
+      "authority": "local_government",
+      "official_source_ids": ["kr-law"]
+    },
+    {
+      "id": "administrative_rule",
+      "label": "고시·훈령·예규·행정지침",
+      "rank": 50,
+      "authority": "executive",
+      "official_source_ids": ["kr-law", "kr-government"]
+    },
+    {
+      "id": "private_rule",
+      "label": "관리규약·기관규정·사업자 운영방침",
+      "rank": 10,
+      "authority": "operator",
+      "official_source_ids": ["kr-government"]
+    }
+  ],
+  "authority_types": [
+    {
+      "id": "legislature",
+      "label": "국회",
+      "capabilities": ["legislate", "convene", "oversight", "request_information"]
+    },
+    {
+      "id": "central_government",
+      "label": "중앙행정기관",
+      "capabilities": ["regulate", "administer", "research", "enforce"]
+    },
+    {
+      "id": "local_government",
+      "label": "지방자치단체",
+      "capabilities": ["enact_ordinance", "administer", "enforce", "pilot"]
+    },
+    {
+      "id": "public_body",
+      "label": "공공기관",
+      "capabilities": ["operate", "research", "implement"]
+    },
+    {
+      "id": "private_operator",
+      "label": "민간·준민간 운영주체",
+      "capabilities": ["operate", "contract", "set_internal_policy"]
+    }
+  ],
+  "official_sources": [
+    {
+      "source_id": "kr-law",
+      "name": "국가법령정보센터",
+      "base_url": "https://www.law.go.kr/",
+      "authority": "primary",
+      "purposes": ["law_text", "effective_date", "amendment_history", "administrative_rules"],
+      "verification": {
+        "freshness_hours": 24,
+        "requires_checked_at": true
+      }
+    },
+    {
+      "source_id": "kr-assembly",
+      "name": "대한민국 국회",
+      "base_url": "https://www.assembly.go.kr/",
+      "authority": "primary",
+      "purposes": ["committee_jurisdiction", "member_role_resolution", "bill_status", "official_profile_discovery"],
+      "verification": {
+        "freshness_hours": 24,
+        "requires_checked_at": true
+      }
+    },
+    {
+      "source_id": "kr-government",
+      "name": "정부24",
+      "base_url": "https://www.gov.kr/portal/main",
+      "authority": "authoritative",
+      "purposes": ["agency_resolution", "public_service_path", "government_information"],
+      "verification": {
+        "freshness_hours": 72,
+        "requires_checked_at": true
+      }
+    }
+  ],
+  "recipient_roles": [
+    {
+      "id": "standing_committee_role",
+      "label": "소관 상임위원회 위원장·간사·위원 역할",
+      "authority_type": "legislature",
+      "resolver_source_ids": ["kr-assembly"],
+      "allowed_channels": ["official_profile", "public_inquiry_form", "official_email"]
+    },
+    {
+      "id": "central_agency_role",
+      "label": "주무 중앙행정기관 담당 부서 역할",
+      "authority_type": "central_government",
+      "resolver_source_ids": ["kr-government"],
+      "allowed_channels": ["public_inquiry_form", "official_email", "postal"]
+    },
+    {
+      "id": "local_government_role",
+      "label": "집행·조례·시범사업 담당 지방자치단체 역할",
+      "authority_type": "local_government",
+      "resolver_source_ids": ["kr-government"],
+      "allowed_channels": ["public_inquiry_form", "official_email", "postal"]
+    },
+    {
+      "id": "operator_role",
+      "label": "시설·서비스 운영주체 역할",
+      "authority_type": "private_operator",
+      "resolver_source_ids": ["kr-government"],
+      "allowed_channels": ["public_inquiry_form", "official_email", "postal"]
+    }
+  ],
+  "normalization": {
+    "locale": "ko-KR",
+    "timezone": "Asia/Seoul",
+    "date_format": "YYYY-MM-DD",
+    "title_case": "preserve",
+    "channel_schemes": ["mailto:", "https://", "postal:", "tel:"]
+  },
+  "verification_policy": {
+    "recipient_ttl_hours": 24,
+    "law_ttl_hours": 24,
+    "official_source_required": true,
+    "unknown_id_policy": "error"
+  }
+}

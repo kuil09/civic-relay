@@ -4,9 +4,11 @@ import process from 'node:process';
 import { approveCase } from './lib/approval.js';
 import { buildCase } from './lib/build.js';
 import { initCase } from './lib/init.js';
+import { listJurisdictionAdapters, loadJurisdictionAdapter } from './lib/jurisdiction.js';
+import { buildLibrary, publishCase } from './lib/library.js';
 import { dispatchCase, prepareDrafts } from './lib/mail.js';
 import { redactCase } from './lib/privacy.js';
-import { verificationState, verifyRecipients } from './lib/recipients.js';
+import { verifyRecipients } from './lib/recipients.js';
 import { recordResponse } from './lib/responses.js';
 import { loadCase } from './lib/io.js';
 import { validateCaseDirectory } from './lib/validate.js';
@@ -54,6 +56,10 @@ Commands:
   dispatch <case-path> --mode draft|send [--max-age-hours 24]
   record-response <case-path> --recipient <id> --classification <type> --file <path> [--summary text]
   redact <case-path> [--output path]
+  jurisdictions [--root path] [--json]
+  jurisdiction <id> [--root path]
+  publish-case <redacted-case-path> --output <path> [--force]
+  build-library <public-root> [--output <path>]
 `);
 }
 
@@ -66,6 +72,35 @@ async function main() {
     const slug = required(positionals[0], 'slug');
     const result = await initCase({ slug, root: options.root || 'cases', title: options.title || slug, statement: options.statement || '<사용자 원문을 입력하세요>' });
     console.log(result);
+    return;
+  }
+
+  if (command === 'jurisdictions') {
+    const root = options.root ? path.resolve(options.root) : undefined;
+    const adapters = await listJurisdictionAdapters(root);
+    if (options.json) console.log(JSON.stringify(adapters.map(({ file, ...item }) => item), null, 2));
+    else for (const adapter of adapters) console.log(`${adapter.id}\t${adapter.name}\t${adapter.scope}`);
+    return;
+  }
+
+  if (command === 'jurisdiction') {
+    const id = required(positionals[0], 'jurisdiction id');
+    const root = options.root ? path.resolve(options.root) : undefined;
+    console.log(JSON.stringify(await loadJurisdictionAdapter(id, { root }), null, 2));
+    return;
+  }
+
+  if (command === 'build-library') {
+    const publicRoot = path.resolve(required(positionals[0], 'public root'));
+    const output = options.output ? path.resolve(options.output) : path.join(publicRoot, 'library.json');
+    console.log(JSON.stringify(await buildLibrary(publicRoot, output), null, 2));
+    return;
+  }
+
+  if (command === 'publish-case') {
+    const redactedCasePath = path.resolve(required(positionals[0], 'redacted case path'));
+    const output = path.resolve(required(options.output, '--output'));
+    console.log(JSON.stringify(await publishCase(redactedCasePath, output, { force: Boolean(options.force) }), null, 2));
     return;
   }
 

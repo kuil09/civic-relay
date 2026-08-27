@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { REQUIRED_SKILL_HEADINGS, SKILL_NAMES } from '../src/lib/constants.js';
+import { listJurisdictionAdapters } from '../src/lib/jurisdiction.js';
 import { listFilesRecursive } from '../src/lib/io.js';
 import { scanText } from '../src/lib/privacy.js';
 import { validateCaseDirectory } from '../src/lib/validate.js';
@@ -30,6 +31,13 @@ for (const name of SKILL_NAMES) {
   for (const heading of REQUIRED_SKILL_HEADINGS) {
     if (!text.includes(heading)) failures.push(`skills/${name}/SKILL.md missing heading: ${heading}`);
   }
+}
+
+try {
+  const adapters = await listJurisdictionAdapters(path.join(root, 'adapters', 'jurisdiction'));
+  if (adapters.length < 2) failures.push('jurisdiction adapters: at least two adapters are required to validate the contract');
+} catch (error) {
+  failures.push(`jurisdiction adapters: ${error.message}`);
 }
 
 const example = await validateCaseDirectory(path.join(root, 'examples', 'apartment-night-delivery'));

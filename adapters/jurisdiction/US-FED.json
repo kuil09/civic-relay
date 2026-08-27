@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0",
+  "id": "US-FED",
+  "name": "United States Federal Government",
+  "scope": "federal",
+  "default_locale": "en-US",
+  "default_timezone": "America/New_York",
+  "legal_layers": [
+    {
+      "id": "constitution",
+      "label": "United States Constitution",
+      "rank": 100,
+      "authority": "constitutional",
+      "official_source_ids": ["us-congress"]
+    },
+    {
+      "id": "public_law",
+      "label": "Acts of Congress and public laws",
+      "rank": 90,
+      "authority": "legislature",
+      "official_source_ids": ["us-congress"]
+    },
+    {
+      "id": "codified_law",
+      "label": "United States Code",
+      "rank": 85,
+      "authority": "legislature",
+      "official_source_ids": ["us-code"]
+    },
+    {
+      "id": "executive_order",
+      "label": "Executive orders and presidential documents",
+      "rank": 75,
+      "authority": "executive",
+      "official_source_ids": ["us-federal-register"]
+    },
+    {
+      "id": "federal_regulation",
+      "label": "Code of Federal Regulations and final rules",
+      "rank": 70,
+      "authority": "executive_agency",
+      "official_source_ids": ["us-federal-register"]
+    },
+    {
+      "id": "agency_guidance",
+      "label": "Agency guidance and policy statements",
+      "rank": 40,
+      "authority": "executive_agency",
+      "official_source_ids": ["us-federal-register"]
+    }
+  ],
+  "authority_types": [
+    {
+      "id": "legislature",
+      "label": "Congress",
+      "capabilities": ["legislate", "convene", "oversight", "request_information"]
+    },
+    {
+      "id": "executive_agency",
+      "label": "Executive department or agency",
+      "capabilities": ["regulate", "administer", "enforce", "research"]
+    },
+    {
+      "id": "independent_agency",
+      "label": "Independent federal agency",
+      "capabilities": ["regulate", "adjudicate", "enforce", "research"]
+    },
+    {
+      "id": "state_or_local_reference",
+      "label": "State or local government reference role",
+      "capabilities": ["coordinate", "implement", "enforce_within_jurisdiction"]
+    },
+    {
+      "id": "private_operator",
+      "label": "Private or quasi-public operator",
+      "capabilities": ["operate", "contract", "set_internal_policy"]
+    }
+  ],
+  "official_sources": [
+    {
+      "source_id": "us-congress",
+      "name": "Congress.gov",
+      "base_url": "https://www.congress.gov/",
+      "authority": "primary",
+      "purposes": ["bill_text", "bill_status", "committee_jurisdiction", "official_profile_discovery"],
+      "verification": {
+        "freshness_hours": 24,
+        "requires_checked_at": true
+      }
+    },
+    {
+      "source_id": "us-code",
+      "name": "Office of the Law Revision Counsel — United States Code",
+      "base_url": "https://uscode.house.gov/",
+      "authority": "primary",
+      "purposes": ["codified_law", "title_structure", "statutory_text"],
+      "verification": {
+        "freshness_hours": 24,
+        "requires_checked_at": true
+      }
+    },
+    {
+      "source_id": "us-federal-register",
+      "name": "Federal Register",
+      "base_url": "https://www.federalregister.gov/",
+      "authority": "primary",
+      "purposes": ["proposed_rule", "final_rule", "presidential_document", "agency_document"],
+      "verification": {
+        "freshness_hours": 24,
+        "requires_checked_at": true
+      }
+    }
+  ],
+  "recipient_roles": [
+    {
+      "id": "congressional_committee_role",
+      "label": "Committee leadership and relevant member office role",
+      "authority_type": "legislature",
+      "resolver_source_ids": ["us-congress"],
+      "allowed_channels": ["official_profile", "public_inquiry_form", "official_email"]
+    },
+    {
+      "id": "executive_agency_role",
+      "label": "Responsible executive department or agency role",
+      "authority_type": "executive_agency",
+      "resolver_source_ids": ["us-federal-register"],
+      "allowed_channels": ["public_inquiry_form", "official_email", "postal"]
+    },
+    {
+      "id": "independent_agency_role",
+      "label": "Responsible independent agency role",
+      "authority_type": "independent_agency",
+      "resolver_source_ids": ["us-federal-register"],
+      "allowed_channels": ["public_inquiry_form", "official_email", "postal"]
+    },
+    {
+      "id": "operator_role",
+      "label": "Regulated or implementing operator role",
+      "authority_type": "private_operator",
+      "resolver_source_ids": ["us-federal-register"],
+      "allowed_channels": ["public_inquiry_form", "official_email", "postal"]
+    }
+  ],
+  "normalization": {
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "date_format": "YYYY-MM-DD",
+    "title_case": "preserve",
+    "channel_schemes": ["mailto:", "https://", "postal:", "tel:"]
+  },
+  "verification_policy": {
+    "recipient_ttl_hours": 24,
+    "law_ttl_hours": 24,
+    "official_source_required": true,
+    "unknown_id_policy": "error"
+  }
+}
