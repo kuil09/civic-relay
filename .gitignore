@@ -1,0 +1,27 @@
+node_modules/
+coverage/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Real local cases are private by default.
+cases/*
+!cases/.gitkeep
+
+# Generated delivery and private material.
+**/build/outbox/
+**/private/
+**/*.secret.*
+**/dispatch-request.json
+**/10-dispatch-manifest.json
+!examples/**/10-dispatch-manifest.example.json
+
+# Credentials and local connector state.
+*.pem
+*.key
+*.p12
+*.pfx
+*.token
+.oauth/
+.credentials/

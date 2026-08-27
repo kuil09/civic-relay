@@ -1,0 +1,26 @@
+schema_version: "0.1"
+jurisdiction: KR
+output:
+  canonical_format: markdown
+  structured_format: json
+  generated_directory: build
+approval:
+  required_stages:
+    - problem
+    - evidence
+    - policy
+    - recipients
+    - document
+    - dispatch
+  human_confirmation_required: true
+recipient_verification:
+  max_age_hours_for_send: 24
+  official_channels_only: true
+delivery:
+  default_mode: draft
+  expose_recipient_addresses: false
+  randomize_messages: false
+  duplicate_key: case_document_recipient
+privacy:
+  local_cases_are_private: true
+  redact_public_exports: true
