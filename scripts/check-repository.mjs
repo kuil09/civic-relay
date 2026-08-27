@@ -9,6 +9,18 @@ import { validateCaseDirectory } from '../src/lib/validate.js';
 
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 const failures = [];
+const phaseFourCollaborationFiles = [
+  'schemas/collaboration.schema.json',
+  'src/lib/collaboration.js',
+  'templates/collaboration.json',
+  'docs/collaboration.md',
+  'tests/collaboration.test.js',
+];
+
+for (const relative of phaseFourCollaborationFiles) {
+  try { await fs.access(path.join(root, relative)); }
+  catch { failures.push(`Phase 4.3 collaboration artifact is missing: ${relative}`); }
+}
 
 for (const file of await listFilesRecursive(root, { ignore: ['.git', 'node_modules', 'cases', 'build'] })) {
   if (path.extname(file) === '.json') {

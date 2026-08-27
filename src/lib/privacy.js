@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { rechainCollaborationLedger, sanitizeCollaborationLedgerForPublic } from './collaboration.js';
 import { ensureDir, listFilesRecursive, pathExists, toPosix, writeJsonAtomic, writeTextAtomic } from './io.js';
 
 const PATTERNS = [
@@ -54,6 +55,21 @@ export async function redactCase(casePath, outputPath = `${casePath}-public`) {
       continue;
     }
     const raw = await fs.readFile(file, 'utf8');
+    if (relative === 'collaboration.json') {
+      const sanitized = sanitizeCollaborationLedgerForPublic(JSON.parse(raw));
+      const textRedaction = redactText(JSON.stringify(sanitized.ledger));
+      const publicLedger = rechainCollaborationLedger(JSON.parse(textRedaction.text));
+      await writeJsonAtomic(target, publicLedger);
+      manifest.files.push({
+        path: relative,
+        copied: false,
+        redactions: {
+          ...textRedaction.counts,
+          private_participants: sanitized.redactedParticipants,
+        },
+      });
+      continue;
+    }
     const redacted = redactText(raw);
     await writeTextAtomic(target, redacted.text);
     manifest.files.push({ path: relative, copied: false, redactions: redacted.counts });

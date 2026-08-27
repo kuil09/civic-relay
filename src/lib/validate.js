@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { APPROVAL_STAGES, CASE_STATUS, STATUS_RANK } from './constants.js';
 import { approvalState } from './approval.js';
+import { collaborationStatus, validateCollaborationLedger } from './collaboration.js';
 import { loadCase, pathExists } from './io.js';
 import { verifyRecipients } from './recipients.js';
 import { scanText } from './privacy.js';
@@ -206,6 +207,34 @@ export async function validateCaseDirectory(casePath, options = {}) {
       for (const match of scanText(text).filter((item) => item.kind === 'secret')) {
         findings.push(finding('error', 'secret_detected', file, `possible secret detected: ${match.label}`, 'PRD 19.2'));
       }
+    }
+  }
+
+  const collaborationFile = path.join(casePath, 'collaboration.json');
+  if (await pathExists(collaborationFile)) {
+    try {
+      const raw = JSON.parse(await fs.readFile(collaborationFile, 'utf8'));
+      const validation = validateCollaborationLedger(raw, { caseId: data.case_id });
+      for (const error of validation.errors) {
+        findings.push(finding('error', 'collaboration_contract', 'collaboration.json', error, 'Phase 4.3'));
+      }
+      if (validation.valid) {
+        const targets = [...new Set(raw.entries
+          .filter((entry) => entry.event_type === 'co_sign_consent')
+          .map((entry) => entry.target))];
+        for (const target of targets) {
+          try {
+            const status = await collaborationStatus(casePath, { target });
+            for (const consent of status.stale_consents) {
+              findings.push(finding('warning', 'stale_consent', `collaboration.json#/entries/${consent.entry_id}`, `consent no longer matches the current document hash for ${target}`, 'Phase 4.3'));
+            }
+          } catch (error) {
+            findings.push(finding('warning', 'collaboration_target', target, error.message, 'Phase 4.3'));
+          }
+        }
+      }
+    } catch (error) {
+      findings.push(finding('error', 'collaboration_json', 'collaboration.json', error.message, 'Phase 4.3'));
     }
   }
 

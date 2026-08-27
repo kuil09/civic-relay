@@ -14,3 +14,21 @@
 | AC-10 배포 투명성 | distribution notice/manifest | dispatch invariant |
 | AC-11 재발송 차단 | dispatch key | duplicate test |
 | AC-12 사례 재현 | complete case folder | example validation |
+
+## Phase 4 Quality Contract (#29)
+
+| Scenario | Production boundary | Automated evidence |
+|---|---|---|
+| 1. KR and US-FED share one adapter contract | `src/lib/jurisdiction.js` | `tests/jurisdiction.test.js` |
+| 2. Office holders and direct contacts are rejected | adapter validation | `tests/jurisdiction.test.js` |
+| 3. Unknown jurisdiction IDs do not fall back to KR | adapter loading | `tests/jurisdiction.test.js` |
+| 4. Unredacted cases cannot be published | `publishCase` redaction-manifest gate | `tests/library.test.js` |
+| 5. Public bundles reject contacts and tokens | public-bundle sensitive-data scan | `tests/library.test.js` |
+| 6. Public catalogs expose no source path | sanitized manifest and relative catalog entries | `tests/library.test.js` |
+| 7. Case facts are not promoted to reusable patterns | policy-pattern allowlist | `tests/library.test.js` |
+| 8. Participation does not imply co-sign consent | explicit identity set and consent events | `tests/collaboration.test.js` |
+| 9. Document changes expire prior consent | target SHA-256 comparison | `tests/collaboration.test.js` |
+| 10. AI actors cannot create human approval or signature records | participant-kind and human-confirmation gates | `tests/collaboration.test.js` |
+| 11. Legacy cases work without Phase 4 files | optional collaboration and public-library boundaries | `tests/collaboration.test.js`, existing MVP tests |
+| 12. Existing CLI works without public or collaboration features | unchanged core commands and optional imports | `tests/collaboration.test.js` CLI process test |
+| Public collaboration privacy | pseudonymization, `public_copy` authority block, and ledger re-chaining | `tests/collaboration.test.js` |

@@ -54,6 +54,9 @@ node src/cli.js draft-mail <case-path>
 node src/cli.js dispatch <case-path> --mode draft|send
 node src/cli.js record-response <case-path> --recipient <id> --classification <type> --file <path>
 node src/cli.js redact <case-path> [--output <path>]
+node src/cli.js collaboration-add-participant <case-path> --id <participant-id> --name <display-name> --kind human|organization|ai --role <role|role>
+node src/cli.js collaboration-record <case-path> --type <event-type> --actor <id> --target <file[#/pointer]>
+node src/cli.js collaboration-status <case-path> --target <file[#/pointer]> [--identity <id|id>]
 ```
 
 `dispatch --mode send`는 기본적으로 비활성화되어 있다. 유효한 6단계 승인, 최신 수신자 검증, 중복 발송 검사, 외부 메일 어댑터가 모두 있어야 실행된다.
@@ -82,6 +85,24 @@ node src/cli.js build-library public
 
 공개 번들의 `dispatchable` 값은 항상 `false`다. 재사용 대상은 문제 프레임·조사 질문·이해관계자 역할·정책 대안·반론 패턴이다. 원 사례의 사실·출처·수신자·발송·회신·동의는 새 사례로 이전되지 않는다.
 
+## Optional collaboration ledger
+
+Collaboration is opt-in and does not migrate existing local cases. `collaboration.json` is an append-only, hash-chained event ledger. It does not replace the six human approval stages in `case.json`.
+
+```bash
+node src/cli.js collaboration-add-participant cases/example \
+  --id author-1 --name "Kim Citizen" --kind human --role case_author
+node src/cli.js collaboration-record cases/example \
+  --type contribution --actor author-1 --target 07-policy-proposal.md
+node src/cli.js collaboration-record cases/example \
+  --type co-sign-consent --actor author-1 --identity author-1 \
+  --target 07-policy-proposal.md --confirm-human
+node src/cli.js collaboration-status cases/example \
+  --target 07-policy-proposal.md --identity author-1
+```
+
+Participation and contribution never imply co-signature consent. Consent is bound to the target document hash, becomes stale when the document changes, and requires explicit human confirmation. `redact` pseudonymizes private participant identities while preserving ledger integrity.
+
 ## 사례 산출물
 
 ```text
@@ -99,6 +120,7 @@ cases/<case-slug>/
 ├── 10-dispatch-manifest.json
 ├── 11-responses/
 ├── 12-follow-up.md
+├── collaboration.json          # optional
 └── case.json
 ```
 
@@ -183,6 +205,7 @@ npm run validate:example
 - [스킬 계약](docs/skill-contract.md)
 - [관할 어댑터](docs/jurisdiction-adapters.md)
 - [공개 사례 라이브러리](docs/public-case-library.md)
+- [Collaboration ledger](docs/collaboration.md)
 - [로드맵](ROADMAP.md)
 
 ## 라이선스

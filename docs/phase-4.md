@@ -35,6 +35,14 @@ Phase 4는 MVP 코어를 웹서비스로 강제 전환하지 않는다. 협업·
 
 개인 의견, 단체 공식안, 공동 서명은 별도 엔터티다. 참여 사실은 동의나 공동 명의를 뜻하지 않는다. AI는 사람의 승인·동의·서명을 생성할 수 없다.
 
+Implementation boundary:
+
+- `collaboration.json` is an optional, hash-chained append-only ledger.
+- Participant registration, contribution, review, dissent, approval, co-signature consent, and withdrawal are separate event types.
+- Co-signature consent is bound to a target document hash and becomes stale after document changes.
+- Public redaction pseudonymizes private participant identities and re-chains the sanitized ledger.
+- Collaboration approval remains separate from the six approval stages in `case.json`.
+
 추적: #28
 
 ## 횡단 품질

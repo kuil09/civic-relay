@@ -3,6 +3,11 @@ import path from 'node:path';
 import process from 'node:process';
 import { approveCase } from './lib/approval.js';
 import { buildCase } from './lib/build.js';
+import {
+  collaborationStatus,
+  recordCollaborationEvent,
+  registerParticipant,
+} from './lib/collaboration.js';
 import { initCase } from './lib/init.js';
 import { listJurisdictionAdapters, loadJurisdictionAdapter } from './lib/jurisdiction.js';
 import { buildLibrary, publishCase } from './lib/library.js';
@@ -42,6 +47,13 @@ function required(value, label) {
   return value;
 }
 
+function listOption(value) {
+  return String(value || '')
+    .split(/[|,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function printHelp() {
   console.log(`Civic Relay CLI
 
@@ -58,6 +70,9 @@ Commands:
   redact <case-path> [--output path]
   jurisdictions [--root path] [--json]
   jurisdiction <id> [--root path]
+  collaboration-status <case-path> --target <file[#/pointer]> [--identity <id|id>]
+  collaboration-add-participant <case-path> --id <participant-id> --name <display-name> --kind human|organization|ai --role <role|role> [--visibility private|public] [--recorded-by <id>] [--target <file>]
+  collaboration-record <case-path> --type contribution|review|dissent|approval|co-sign-consent|consent-withdrawal --actor <id> --target <file[#/pointer]> [--identity <id>] [--consent-entry <id>] [--confirm-human] [--summary text]
   publish-case <redacted-case-path> --output <path> [--force]
   build-library <public-root> [--output <path>]
 `);
@@ -145,6 +160,14 @@ async function main() {
     return;
   }
 
+  if (command === 'collaboration-status') {
+    console.log(JSON.stringify(await collaborationStatus(casePath, {
+      target: required(options.target, '--target'),
+      requiredIdentities: listOption(options.identity),
+    }), null, 2));
+    return;
+  }
+
   if (command === 'verify-recipients') {
     const data = await loadCase(casePath);
     const result = verifyRecipients(data, { maxAgeHours: Number(options['max-age-hours'] || 24), selectedOnly: false });
@@ -189,6 +212,32 @@ async function main() {
   if (command === 'redact') {
     const output = options.output ? path.resolve(options.output) : `${casePath}-public`;
     console.log(JSON.stringify(await redactCase(casePath, output), null, 2));
+    return;
+  }
+
+  if (command === 'collaboration-add-participant') {
+    console.log(JSON.stringify(await registerParticipant(casePath, {
+      participantId: required(options.id, '--id'),
+      displayName: required(options.name, '--name'),
+      participantKind: required(options.kind, '--kind'),
+      roles: listOption(required(options.role, '--role')),
+      visibility: options.visibility || 'private',
+      recordedBy: options['recorded-by'] || options.id,
+      target: options.target || 'case.json',
+    }), null, 2));
+    return;
+  }
+
+  if (command === 'collaboration-record') {
+    console.log(JSON.stringify(await recordCollaborationEvent(casePath, {
+      eventType: required(options.type, '--type'),
+      actorId: required(options.actor, '--actor'),
+      target: required(options.target, '--target'),
+      identityId: options.identity || null,
+      consentEntryId: options['consent-entry'] || null,
+      confirmHuman: Boolean(options['confirm-human']),
+      summary: options.summary || '',
+    }), null, 2));
     return;
   }
 
