@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civic-relay.dev/schemas/dispatch.schema.json",
+  "title": "Civic Relay Dispatch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dispatch_id",
+    "dispatch_key",
+    "recipient_id",
+    "mode",
+    "channel",
+    "document_hash",
+    "approval_id",
+    "created_at",
+    "status"
+  ],
+  "properties": {
+    "dispatch_id": {
+      "type": "string"
+    },
+    "dispatch_key": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "recipient_id": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "draft",
+        "send"
+      ]
+    },
+    "channel": {
+      "enum": [
+        "email",
+        "web_form",
+        "postal",
+        "phone_script"
+      ]
+    },
+    "subject": {
+      "type": "string"
+    },
+    "document_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "approval_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "provider_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-civic-relay-sensitive": true
+    },
+    "status": {
+      "enum": [
+        "drafted",
+        "queued",
+        "sent",
+        "failed",
+        "bounced",
+        "blocked"
+      ]
+    },
+    "failure_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "alternative_channel": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

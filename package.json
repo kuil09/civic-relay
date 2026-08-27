@@ -1,0 +1,27 @@
+{
+  "name": "civic-relay",
+  "version": "0.1.0",
+  "description": "A file-first AI agent harness that turns civic problems into reviewable policy packages and accountable delivery paths.",
+  "type": "module",
+  "private": false,
+  "bin": {
+    "civic-relay": "./src/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check-repository.mjs",
+    "validate:example": "node src/cli.js validate examples/apartment-night-delivery",
+    "build:example": "node src/cli.js build examples/apartment-night-delivery"
+  },
+  "keywords": [
+    "civic-tech",
+    "policy",
+    "agents",
+    "open-government",
+    "public-interest"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,11 @@
+mode: draft
+adapter: file-outbox
+sender:
+  name: "<사용자 실명 또는 단체명>"
+  reply_to: "<로컬 비공개 설정에서 주입>"
+external_adapter:
+  command_env: CIVIC_RELAY_MAIL_ADAPTER
+  timeout_seconds: 30
+limits:
+  max_recipients_per_approval: 50
+  automatic_followups: 0

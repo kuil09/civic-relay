@@ -1,0 +1,25 @@
+id: KR
+name: 대한민국
+language: ko
+legal_layers:
+  - law
+  - presidential_decree
+  - prime_minister_or_ministerial_ordinance
+  - local_ordinance_or_rule
+  - administrative_notice_or_guideline
+  - public_institution_rule
+  - private_or_quasi_private_rule
+authority_types:
+  - legislature
+  - central_government
+  - local_government
+  - public_institution
+  - private_operator
+official_source_priority:
+  - 국가법령정보센터
+  - 대한민국 국회 및 위원회 공식 자료
+  - 중앙부처·지방자치단체·공공기관 공식 자료
+  - 국가통계·공공 연구기관
+currentness:
+  member_and_contact_recheck_required: true
+  law_effective_date_check_required: true
