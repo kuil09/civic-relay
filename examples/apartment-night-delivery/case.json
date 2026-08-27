@@ -1,0 +1,797 @@
+{
+  "schema_version": "0.1",
+  "case_id": "apartment-night-delivery",
+  "title": "공동주택 심야 물류 하역 공간의 제도 사각지대",
+  "status": "review",
+  "jurisdiction": {
+    "country": "KR",
+    "region": null,
+    "locality": null
+  },
+  "original_statement": "오래된 아파트는 심야에 모든 주차면이 차 있어 새벽 배송 차량이 도로와 회차 공간을 막는다. 물류 노동자는 짐을 멀리 옮겨야 하고, 입주민의 통행과 안전에도 문제가 생긴다. 공동주택에 한정해 비어 있는 장애인 전용 주차구역을 심야 5~10분 하역에 사용할 수 있는 예외를 사회적으로 논의하고 싶다.",
+  "problem_definition": "심야에 주차면이 포화된 기존 공동주택에서 배송 차량이 합법적이고 안전하게 짧은 하역을 수행할 공간이 없어 물류 노동자의 작업 부담, 입주민 통행, 회차·소방 안전이 충돌한다.",
+  "desired_change": "장애인 이동권을 훼손하지 않으면서 공동주택 심야 하역의 안전한 공간과 운영 규칙을 마련하기 위한 교차 상임위·부처 공동 검토 및 제한적 시범 설계를 요청한다.",
+  "claims": [
+    {
+      "claim_id": "claim-observation-001",
+      "text": "일부 기존 공동주택에서는 심야에 일반 주차면이 가득 차 배송 차량이 도로 또는 회차 공간에 정차한다.",
+      "type": "observation",
+      "origin": "user_observation",
+      "source_ids": [],
+      "contradicting_source_ids": [],
+      "confidence": "unverified",
+      "verified_at": null,
+      "use_in_proposal": true,
+      "notes": "사용자 관찰이며 빈도와 규모는 추가 조사 필요"
+    },
+    {
+      "claim_id": "claim-fact-001",
+      "text": "장애인등편의법 제17조제4항은 장애인전용주차구역 주차표지가 없는 자동차의 주차를 금지하고, 표지가 있어도 보행에 장애가 있는 사람이 탑승하지 않은 경우를 금지한다.",
+      "type": "fact",
+      "origin": "external_source",
+      "source_ids": [
+        "source-law-001"
+      ],
+      "contradicting_source_ids": [],
+      "confidence": "high",
+      "verified_at": "2026-08-27T03:00:00.000Z",
+      "use_in_proposal": true,
+      "notes": ""
+    },
+    {
+      "claim_id": "claim-fact-002",
+      "text": "보건복지부의 장애인전용주차구역 안내는 주차 가능 대상을 주차표지를 부착하고 보행에 장애가 있는 사람이 탑승한 차량으로 설명한다.",
+      "type": "fact",
+      "origin": "external_source",
+      "source_ids": [
+        "source-mohw-001"
+      ],
+      "contradicting_source_ids": [],
+      "confidence": "high",
+      "verified_at": "2026-08-27T03:00:00.000Z",
+      "use_in_proposal": true,
+      "notes": ""
+    },
+    {
+      "claim_id": "claim-fact-003",
+      "text": "장애인전용주차구역 위반과 주차 방해 행위의 단속·과태료 집행에는 지방자치단체 등 시설주관기관이 관여한다.",
+      "type": "fact",
+      "origin": "external_source",
+      "source_ids": [
+        "source-mohw-001",
+        "source-law-001"
+      ],
+      "contradicting_source_ids": [],
+      "confidence": "high",
+      "verified_at": "2026-08-27T03:00:00.000Z",
+      "use_in_proposal": true,
+      "notes": ""
+    },
+    {
+      "claim_id": "claim-fact-004",
+      "text": "공동주택 주차 공간의 설치 기준은 주택·주차 관련 법령과 지방자치단체 조례의 적용을 받는다.",
+      "type": "fact",
+      "origin": "external_source",
+      "source_ids": [
+        "source-housing-001"
+      ],
+      "contradicting_source_ids": [],
+      "confidence": "medium",
+      "verified_at": "2026-08-27T03:00:00.000Z",
+      "use_in_proposal": true,
+      "notes": "구체 기준은 건축 시기·규모·지역 조례에 따라 별도 확인 필요"
+    },
+    {
+      "claim_id": "claim-inference-001",
+      "text": "공동주택 내부 합의만으로 장애인전용주차구역의 법률상 금지를 일반 배송 차량에 대해 면제하기는 어렵고, 예외를 도입하려면 법률 또는 명시적 위임 근거의 검토가 필요하다.",
+      "type": "inference",
+      "origin": "agent_analysis",
+      "source_ids": [
+        "source-law-001",
+        "source-mohw-001"
+      ],
+      "contradicting_source_ids": [],
+      "confidence": "medium",
+      "verified_at": "2026-08-27T03:00:00.000Z",
+      "use_in_proposal": true,
+      "notes": "법률 전문가와 관계 부처의 확인 필요"
+    },
+    {
+      "claim_id": "claim-inference-002",
+      "text": "이 문제는 장애인 이동권, 공동주택·주차 인프라, 물류 노동 안전, 지방 집행 권한이 교차하는 사안이다.",
+      "type": "inference",
+      "origin": "agent_analysis",
+      "source_ids": [
+        "source-law-001",
+        "source-housing-001",
+        "source-assembly-001"
+      ],
+      "contradicting_source_ids": [],
+      "confidence": "medium",
+      "verified_at": "2026-08-27T03:00:00.000Z",
+      "use_in_proposal": true,
+      "notes": ""
+    },
+    {
+      "claim_id": "claim-proposal-001",
+      "text": "즉시 전국 예외를 도입하기보다 권리 보호 장치와 중단 조건을 둔 공동 검토 또는 시범사업을 우선 논의한다.",
+      "type": "proposal",
+      "origin": "user_proposal",
+      "source_ids": [],
+      "contradicting_source_ids": [],
+      "confidence": "unverified",
+      "verified_at": null,
+      "use_in_proposal": true,
+      "notes": ""
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "source-law-001",
+      "title": "장애인·노인·임산부 등의 편의증진 보장에 관한 법률 제17조",
+      "publisher": "국가법령정보센터",
+      "source_type": "law",
+      "official": true,
+      "locator": "https://www.law.go.kr/DRF/lawService.do?ID=265737&OC=unicpla&mobileYn=Y&target=decc&type=HTML",
+      "published_at": null,
+      "checked_at": "2026-08-27T03:00:00.000Z",
+      "effective_at": "현행 조문은 실제 사용 시 재검증",
+      "summary": "장애인전용주차구역 설치, 표지, 주차 금지, 방해 금지, 단속과 하위법령 위임 구조",
+      "supports": [
+        "claim-fact-001",
+        "claim-fact-003",
+        "claim-inference-001",
+        "claim-inference-002"
+      ],
+      "contradicts": [],
+      "confidence": "high",
+      "snapshot_hash": null,
+      "notes": "예제이므로 발송 전 국가법령정보센터 현행 조문 재확인"
+    },
+    {
+      "source_id": "source-mohw-001",
+      "title": "장애인편의시설관련정책 — 장애인전용주차구역",
+      "publisher": "보건복지부",
+      "source_type": "government",
+      "official": true,
+      "locator": "https://www.mohw.go.kr/menu.es?mid=a10710020500",
+      "published_at": null,
+      "checked_at": "2026-08-27T03:00:00.000Z",
+      "effective_at": "웹 안내 확인일 기준",
+      "summary": "주차 가능 차량, 단속 대상, 시설주관기관과 과태료 안내",
+      "supports": [
+        "claim-fact-002",
+        "claim-fact-003",
+        "claim-inference-001"
+      ],
+      "contradicts": [],
+      "confidence": "high",
+      "snapshot_hash": null,
+      "notes": ""
+    },
+    {
+      "source_id": "source-housing-001",
+      "title": "주택건설기준 등에 관한 규정 및 관련 주차 기준",
+      "publisher": "국가법령정보센터",
+      "source_type": "law",
+      "official": true,
+      "locator": "https://www.law.go.kr/법령/주택건설기준등에관한규정",
+      "published_at": null,
+      "checked_at": "2026-08-27T03:00:00.000Z",
+      "effective_at": "건축 시기와 지역 조례별 확인 필요",
+      "summary": "공동주택 시설·주차 설치 기준의 법령 계층을 확인하기 위한 공식 원문 진입점",
+      "supports": [
+        "claim-fact-004",
+        "claim-inference-002"
+      ],
+      "contradicts": [],
+      "confidence": "medium",
+      "snapshot_hash": null,
+      "notes": "정책 제안서 최종본에는 적용 대상 단지의 준공시기와 조례를 추가 조사"
+    },
+    {
+      "source_id": "source-assembly-001",
+      "title": "대한민국 국회 위원회 및 의안 공식 자료",
+      "publisher": "대한민국 국회",
+      "source_type": "assembly",
+      "official": true,
+      "locator": "https://www.assembly.go.kr/portal/main/main.do",
+      "published_at": null,
+      "checked_at": "2026-08-27T03:00:00.000Z",
+      "effective_at": "위원회 구성은 발송 직전 재검증",
+      "summary": "보건복지·국토교통·기후에너지환경노동 관련 위원회의 현재 명칭과 구성 확인 경로",
+      "supports": [
+        "claim-inference-002"
+      ],
+      "contradicts": [],
+      "confidence": "medium",
+      "snapshot_hash": null,
+      "notes": "예제에는 현직 의원 이름을 고정하지 않음"
+    }
+  ],
+  "legal_layers": [
+    {
+      "layer_id": "layer-law-disabled-parking",
+      "level": "law",
+      "instrument": "장애인·노인·임산부 등의 편의증진 보장에 관한 법률 제17조",
+      "current_rule": "주차표지와 보행장애인 탑승 요건을 충족하지 않은 차량의 장애인전용주차구역 주차를 금지한다.",
+      "change_path": "일반 배송 차량의 심야·단시간 예외를 허용하려면 법률상 예외 또는 하위법령에 대한 명확한 위임 여부를 국회와 정부가 검토해야 한다.",
+      "decision_maker": "국회, 법률 위임 범위 안의 정부",
+      "source_ids": [
+        "source-law-001"
+      ],
+      "certainty": "confirmed"
+    },
+    {
+      "layer_id": "layer-decree-enforcement",
+      "level": "presidential_decree",
+      "instrument": "장애인등편의법 시행령·시행규칙",
+      "current_rule": "주차표지, 주차 방해 행위, 설치·표지 등 세부 기준을 정한다.",
+      "change_path": "법률이 허용하거나 위임한 범위 안에서 세부 시간·대상·단속·기록 조건을 설계할 수 있는지 검토한다.",
+      "decision_maker": "정부 및 주무부처",
+      "source_ids": [
+        "source-law-001",
+        "source-mohw-001"
+      ],
+      "certainty": "needs_legal_review"
+    },
+    {
+      "layer_id": "layer-local-parking",
+      "level": "local_ordinance",
+      "instrument": "지방자치단체 주차장·공동주택 관련 조례",
+      "current_rule": "법령의 위임 범위에서 주차 설치와 운영 기준을 구체화한다.",
+      "change_path": "하역 공간 시범사업, 표지, 단속·평가 기준 등 상위법에 반하지 않는 운영 개선을 검토한다.",
+      "decision_maker": "지방의회와 지방자치단체",
+      "source_ids": [
+        "source-housing-001"
+      ],
+      "certainty": "needs_legal_review"
+    },
+    {
+      "layer_id": "layer-management-rule",
+      "level": "management_rule",
+      "instrument": "공동주택 관리규약과 주차 운영규칙",
+      "current_rule": "단지 내부 일반 주차·회차·출입·하역 운영을 정할 수 있으나 상위법상 장애인전용주차구역 금지를 면제할 수는 없다.",
+      "change_path": "일반 하역 지점, 예약·표지, 카트 보관, 회차공간 안전관리 등 합법 범위의 운영안을 도입한다.",
+      "decision_maker": "입주자대표회의와 관리주체",
+      "source_ids": [
+        "source-law-001",
+        "source-housing-001"
+      ],
+      "certainty": "needs_legal_review"
+    },
+    {
+      "layer_id": "layer-platform-policy",
+      "level": "private_policy",
+      "instrument": "택배사·배송 플랫폼의 노선·장비·도착시간 운영방침",
+      "current_rule": "배송 사업자가 차량·기사·장비·노선 운영을 결정한다.",
+      "change_path": "전동 카트, 공동 환적, 도착시간 조정, 관리사무소 사전 통지 등을 사업자 운영정책으로 시험한다.",
+      "decision_maker": "택배사와 배송 플랫폼",
+      "source_ids": [],
+      "certainty": "hypothesis"
+    }
+  ],
+  "authorities": [
+    {
+      "authority_id": "authority-na-health",
+      "organization": "국회 보건복지위원회",
+      "authority_type": "legislature",
+      "action": "legislate",
+      "jurisdiction_type": "direct",
+      "reason": "장애인전용주차구역의 법적 보호와 예외 근거가 핵심 쟁점이다.",
+      "source_ids": [
+        "source-law-001",
+        "source-assembly-001"
+      ]
+    },
+    {
+      "authority_id": "authority-mohw",
+      "organization": "보건복지부",
+      "authority_type": "central_government",
+      "action": "regulate",
+      "jurisdiction_type": "direct",
+      "reason": "장애인전용주차구역 정책과 하위기준, 이동권 보호를 담당한다.",
+      "source_ids": [
+        "source-mohw-001"
+      ]
+    },
+    {
+      "authority_id": "authority-na-land",
+      "organization": "국회 국토교통위원회",
+      "authority_type": "legislature",
+      "action": "convene",
+      "jurisdiction_type": "joint",
+      "reason": "공동주택·주차 인프라와 신축·대수선 기준을 함께 검토해야 한다.",
+      "source_ids": [
+        "source-housing-001",
+        "source-assembly-001"
+      ]
+    },
+    {
+      "authority_id": "authority-molit",
+      "organization": "국토교통부",
+      "authority_type": "central_government",
+      "action": "regulate",
+      "jurisdiction_type": "joint",
+      "reason": "공동주택 시설과 주차·하역 공간의 제도 및 기술 기준을 검토할 수 있다.",
+      "source_ids": [
+        "source-housing-001"
+      ]
+    },
+    {
+      "authority_id": "authority-na-labor",
+      "organization": "국회 기후에너지환경노동위원회",
+      "authority_type": "legislature",
+      "action": "convene",
+      "jurisdiction_type": "joint",
+      "reason": "물류 노동자의 심야 정차·운반·교통 안전을 노동환경 관점에서 검토할 필요가 있다.",
+      "source_ids": [
+        "source-assembly-001"
+      ]
+    },
+    {
+      "authority_id": "authority-moel",
+      "organization": "고용노동부",
+      "authority_type": "central_government",
+      "action": "research",
+      "jurisdiction_type": "joint",
+      "reason": "배송 노동자의 작업환경과 산업안전 위험을 조사하고 사업자 개선책을 검토할 수 있다.",
+      "source_ids": []
+    },
+    {
+      "authority_id": "authority-local",
+      "organization": "지방자치단체",
+      "authority_type": "local_government",
+      "action": "enforce",
+      "jurisdiction_type": "direct",
+      "reason": "장애인전용주차구역 단속과 지역 주차·공동주택 행정, 시범사업 집행이 연결된다.",
+      "source_ids": [
+        "source-mohw-001"
+      ]
+    },
+    {
+      "authority_id": "authority-management",
+      "organization": "공동주택 관리주체",
+      "authority_type": "private_operator",
+      "action": "operate",
+      "jurisdiction_type": "joint",
+      "reason": "단지의 실제 출입·회차·일반 하역 공간과 분쟁을 운영한다.",
+      "source_ids": []
+    },
+    {
+      "authority_id": "authority-carriers",
+      "organization": "택배사·배송 플랫폼",
+      "authority_type": "private_operator",
+      "action": "operate",
+      "jurisdiction_type": "joint",
+      "reason": "도착시간, 차량, 카트, 환적 방식과 기사 작업조건을 바꿀 수 있다.",
+      "source_ids": []
+    }
+  ],
+  "stakeholders": [
+    {
+      "stakeholder_id": "stakeholder-disabled",
+      "name": "보행장애가 있는 주민과 방문자",
+      "roles": [
+        "rights_holder",
+        "burdened"
+      ],
+      "interests": [
+        "필요할 때 즉시 사용할 수 있는 접근 가능한 주차공간",
+        "예외의 상시화와 오남용 방지"
+      ],
+      "risks": [
+        "심야에도 실제 이용이 발생할 수 있음",
+        "5~10분 규칙이 지켜지지 않을 가능성"
+      ],
+      "source_ids": [
+        "source-law-001",
+        "source-mohw-001"
+      ]
+    },
+    {
+      "stakeholder_id": "stakeholder-workers",
+      "name": "새벽 배송·택배 노동자",
+      "roles": [
+        "beneficiary",
+        "burdened"
+      ],
+      "interests": [
+        "도착 즉시 안전한 하역",
+        "장거리 운반과 도로 정차 위험 감소"
+      ],
+      "risks": [
+        "불법·위험 정차의 책임 전가",
+        "시간 압박과 추가 장비 비용"
+      ],
+      "source_ids": []
+    },
+    {
+      "stakeholder_id": "stakeholder-residents",
+      "name": "입주민과 보행자",
+      "roles": [
+        "beneficiary",
+        "burdened"
+      ],
+      "interests": [
+        "통행·소음·회차·소방 안전",
+        "주차면 추가 잠식 방지"
+      ],
+      "risks": [
+        "하역 차량의 통행 방해",
+        "운영 규칙 분쟁"
+      ],
+      "source_ids": []
+    },
+    {
+      "stakeholder_id": "stakeholder-management",
+      "name": "관리사무소와 입주자대표회의",
+      "roles": [
+        "enforcer",
+        "operator",
+        "cost_bearer"
+      ],
+      "interests": [
+        "실행 가능한 단순 규칙",
+        "민원·단속·분쟁 비용 감소"
+      ],
+      "risks": [
+        "시간 측정과 즉시 이동 집행의 어려움",
+        "사고 발생 시 책임 불명확"
+      ],
+      "source_ids": []
+    },
+    {
+      "stakeholder_id": "stakeholder-carriers",
+      "name": "택배사와 배송 플랫폼",
+      "roles": [
+        "operator",
+        "cost_bearer"
+      ],
+      "interests": [
+        "배송 효율과 기사 안전",
+        "단지별 예측 가능한 접근 방식"
+      ],
+      "risks": [
+        "카트·환적·예약 시스템 비용",
+        "사업자 책임 확대"
+      ],
+      "source_ids": []
+    },
+    {
+      "stakeholder_id": "stakeholder-emergency",
+      "name": "소방·응급·회차 공간 이용자",
+      "roles": [
+        "rights_holder",
+        "indirect"
+      ],
+      "interests": [
+        "회차와 긴급 접근 공간 상시 확보"
+      ],
+      "risks": [
+        "하역 허용이 회차공간 점유를 정당화할 가능성"
+      ],
+      "source_ids": []
+    },
+    {
+      "stakeholder_id": "stakeholder-local",
+      "name": "지방자치단체 단속·주택 담당 부서",
+      "roles": [
+        "enforcer",
+        "cost_bearer"
+      ],
+      "interests": [
+        "명확한 법적 근거와 집행 기준",
+        "신고·민원 처리 비용 감소"
+      ],
+      "risks": [
+        "새 예외의 확인·단속 비용",
+        "지역별 집행 편차"
+      ],
+      "source_ids": [
+        "source-mohw-001"
+      ]
+    }
+  ],
+  "options": [
+    {
+      "option_id": "option-status-quo",
+      "title": "현행 유지와 불법 정차·주차 방해 단속 강화",
+      "category": "status_quo",
+      "mechanism": "장애인전용주차구역 보호를 그대로 유지하고 도로·회차 공간 불법 점유를 단속한다.",
+      "legal_change": "없음",
+      "implementer": "지방자치단체와 관리주체",
+      "rights_impact": "장애인 이동권 보호는 강하나 물류 하역 공간 부족은 해결되지 않을 수 있다.",
+      "cost": "단속·민원 비용 증가",
+      "enforcement_difficulty": "medium",
+      "reversibility": "high",
+      "metrics": [
+        "장애인구역 위반 건수",
+        "회차공간 점유 민원"
+      ],
+      "stop_conditions": [],
+      "assumptions": [
+        "단속만으로 대체 하역 행동이 가능하다는 가정"
+      ]
+    },
+    {
+      "option_id": "option-general-loading",
+      "title": "일반 공간의 심야 단시간 하역 지점 운영",
+      "category": "operational_change",
+      "mechanism": "소방·회차를 침해하지 않는 일부 일반 공간을 표지·예약·센서로 10분 이하 하역에 사용한다.",
+      "legal_change": "관리규약·운영규칙과 필요 시 지자체 지원",
+      "implementer": "관리주체와 지자체",
+      "rights_impact": "장애인구역을 건드리지 않지만 기존 공간 확보가 어려운 단지는 적용 한계가 있다.",
+      "cost": "표지·센서·운영 인력",
+      "enforcement_difficulty": "medium",
+      "reversibility": "high",
+      "metrics": [
+        "정차 대기시간",
+        "도로 점유시간",
+        "민원·사고"
+      ],
+      "stop_conditions": [
+        "소방 접근 저해",
+        "상시 주차 전용으로 변질"
+      ],
+      "assumptions": [
+        "최소 한 곳의 합법 공간을 확보할 수 있음"
+      ]
+    },
+    {
+      "option_id": "option-microhub",
+      "title": "단지 외부 공동 환적 지점과 전동 카트",
+      "category": "pilot",
+      "mechanism": "차량은 단지 외부 또는 인접 거점에 정차하고 전동 카트로 동별 배송한다.",
+      "legal_change": "도로·시설 사용 허가와 사업자 운영 협약",
+      "implementer": "지자체·관리주체·택배사",
+      "rights_impact": "단지 내부 차량 충돌은 줄지만 기사 작업시간과 장비 부담이 늘 수 있다.",
+      "cost": "거점·카트·충전·보관 비용",
+      "enforcement_difficulty": "medium",
+      "reversibility": "high",
+      "metrics": [
+        "운반거리",
+        "기사 작업시간",
+        "단지 내 차량 진입"
+      ],
+      "stop_conditions": [
+        "기사 부담 증가",
+        "거점 안전·민원 악화"
+      ],
+      "assumptions": [
+        "인접 환적 공간이 존재함"
+      ]
+    },
+    {
+      "option_id": "option-new-build-standard",
+      "title": "신축·대수선 공동주택의 하역 공간 기준",
+      "category": "subordinate_legislation",
+      "mechanism": "신축 또는 대규모 개보수 시 배송·이사·돌봄 차량의 단시간 하역 지점을 설계 기준에 포함한다.",
+      "legal_change": "주택·건축 관련 하위기준 또는 인증·인센티브 검토",
+      "implementer": "국토교통부·지자체·사업주체",
+      "rights_impact": "장기적 구조 개선이지만 기존 단지의 당장 문제는 해결하지 못한다.",
+      "cost": "건설·공간 기회비용",
+      "enforcement_difficulty": "low",
+      "reversibility": "low",
+      "metrics": [
+        "하역면 설치율",
+        "회차·보행 충돌"
+      ],
+      "stop_conditions": [
+        "주거비 부담이 편익을 현저히 초과"
+      ],
+      "assumptions": [
+        "설계 단계의 공간 확보가 운영 비용보다 효율적임"
+      ]
+    },
+    {
+      "option_id": "option-restricted-exception",
+      "title": "공동주택 심야 단시간 예외의 제한적 시범 검토",
+      "category": "legislation",
+      "mechanism": "빈 장애인전용주차구역에 한해 등록된 물류 차량이 5~10분 하역하고 장애인 이용 신호 시 즉시 이동하는 예외를 매우 제한적으로 시험한다.",
+      "legal_change": "장애인등편의법 또는 명시적 위임 근거와 하위기준 검토",
+      "implementer": "국회·보건복지부·지자체",
+      "rights_impact": "하역 접근성은 높지만 장애인 이동권 침해와 예외 상시화 위험이 가장 크다.",
+      "cost": "등록·시간기록·감지·단속·보험 비용",
+      "enforcement_difficulty": "high",
+      "reversibility": "medium",
+      "metrics": [
+        "실제 장애인 이용 충돌",
+        "초과 점유율",
+        "즉시 이동 성공률",
+        "배송 노동자 운반거리"
+      ],
+      "stop_conditions": [
+        "단 한 건의 긴급 이용 방해에 대한 중단 기준 검토",
+        "초과 점유 반복",
+        "검증·단속 불가능"
+      ],
+      "assumptions": [
+        "빈 상태를 신뢰성 있게 확인하고 즉시 이동시킬 수 있음"
+      ]
+    },
+    {
+      "option_id": "option-platform-coordination",
+      "title": "택배사 도착 조정과 공용 장비 협약",
+      "category": "operational_change",
+      "mechanism": "택배사 간 도착시간 분산, 공용 카트·출입 안내, 단지별 하역 규칙을 표준화한다.",
+      "legal_change": "민간 협약과 관리 운영 개선",
+      "implementer": "택배사·플랫폼·관리주체",
+      "rights_impact": "법적 예외 없이 일부 마찰을 줄이지만 사업자 참여가 약하면 효과가 제한된다.",
+      "cost": "운영 시스템과 조정 비용",
+      "enforcement_difficulty": "medium",
+      "reversibility": "high",
+      "metrics": [
+        "동시 도착 차량 수",
+        "하역 시작 대기시간"
+      ],
+      "stop_conditions": [
+        "기사 시간 압박 증가",
+        "특정 사업자 차별"
+      ],
+      "assumptions": [
+        "복수 사업자가 협약에 참여함"
+      ]
+    }
+  ],
+  "counterarguments": [
+    {
+      "counterargument_id": "counter-001",
+      "argument": "심야에도 장애인 주민·방문자의 이용은 발생하며 단 5분의 점유도 접근권을 실질적으로 침해할 수 있다.",
+      "strength": "strong",
+      "source_ids": [
+        "source-law-001",
+        "source-mohw-001"
+      ],
+      "response": "장애인구역 예외를 기본안으로 삼지 않고 일반 하역·환적·인프라 대안을 우선한다. 예외 시범은 당사자 참여, 즉시 이동, 실시간 비어 있음 확인, 낮은 중단 임계치를 요구한다.",
+      "residual_risk": "감지와 즉시 이동이 실패하면 회복할 수 없는 이용 방해가 생긴다."
+    },
+    {
+      "counterargument_id": "counter-002",
+      "argument": "단시간 예외는 실제 현장에서 상시 주차와 초과 점유로 변질될 가능성이 높고 관리사무소가 집행하기 어렵다.",
+      "strength": "strong",
+      "source_ids": [],
+      "response": "등록 차량, 자동 시간기록, 초과 시 즉시 자격 정지, 소규모·단기 시범, 독립 평가를 조건으로 한다.",
+      "residual_risk": "관리 인력과 기술 비용이 편익을 초과할 수 있다."
+    },
+    {
+      "counterargument_id": "counter-003",
+      "argument": "배송 편의를 위해 장애인 권리를 조정하기 전에 택배사와 주택사업자가 비용을 부담하는 대안을 먼저 시행해야 한다.",
+      "strength": "strong",
+      "source_ids": [],
+      "response": "사업자 장비·환적·도착 조정과 신축 하역 기준을 별도 대안으로 우선 비교하고 비용 부담 주체를 명시한다.",
+      "residual_risk": "기존 단지의 공간 제약과 사업자 참여 거부가 남는다."
+    },
+    {
+      "counterargument_id": "counter-004",
+      "argument": "회차·소방 공간을 하역구역으로 전환하면 더 큰 안전 위험을 만든다.",
+      "strength": "strong",
+      "source_ids": [],
+      "response": "소방·회차 동선은 후보지에서 제외하고 안전기관 검토와 물리적 통로 기준을 선행한다.",
+      "residual_risk": "단지 구조에 따라 일반 공간 대안이 전혀 없을 수 있다."
+    },
+    {
+      "counterargument_id": "counter-005",
+      "argument": "전국 법률 개정은 단지별 주차 구조와 심야 물류 수요 차이를 반영하지 못한다.",
+      "strength": "strong",
+      "source_ids": [],
+      "response": "전국 즉시 시행보다 법적 근거 아래 지역·단지 유형별 시범과 종료 조건을 우선 검토한다.",
+      "residual_risk": "지역별 형평성과 집행 편차가 생길 수 있다."
+    }
+  ],
+  "recipients": [
+    {
+      "recipient_id": "recipient-na-health-role",
+      "organization": "국회 보건복지위원회",
+      "person_name": null,
+      "role": "위원장·간사·관련 위원실(현직 재검증 필요)",
+      "jurisdiction_type": "direct",
+      "reason": "장애인전용주차구역 보호 규정과 예외 입법 검토의 직접 소관 후보다.",
+      "expected_action": "교차 상임위 공동 정책토론 또는 법률·하위법령 가능성 검토",
+      "official_channel": "https://www.assembly.go.kr/portal/main/main.do",
+      "channel_type": "web_form",
+      "channel_source": "https://www.assembly.go.kr/portal/main/main.do",
+      "verified_at": null,
+      "verification_status": "stale_by_design",
+      "selected": false,
+      "status": "candidate",
+      "notes": "실제 사용 시 공식 위원 명단과 의원실 업무 채널 재검증"
+    },
+    {
+      "recipient_id": "recipient-na-land-role",
+      "organization": "국회 국토교통위원회",
+      "person_name": null,
+      "role": "위원장·간사·관련 위원실(현직 재검증 필요)",
+      "jurisdiction_type": "joint",
+      "reason": "기존·신축 공동주택의 주차·하역 인프라 대안을 검토할 수 있다.",
+      "expected_action": "공동주택 하역 공간 기준과 기존 단지 시범지원 검토",
+      "official_channel": "https://www.assembly.go.kr/portal/main/main.do",
+      "channel_type": "web_form",
+      "channel_source": "https://www.assembly.go.kr/portal/main/main.do",
+      "verified_at": null,
+      "verification_status": "stale_by_design",
+      "selected": false,
+      "status": "candidate",
+      "notes": ""
+    },
+    {
+      "recipient_id": "recipient-na-labor-role",
+      "organization": "국회 기후에너지환경노동위원회",
+      "person_name": null,
+      "role": "위원장·간사·노동 관련 위원실(현직 재검증 필요)",
+      "jurisdiction_type": "joint",
+      "reason": "심야 배송 노동자의 정차·운반·사고 위험을 노동 안전 의제로 검토할 수 있다.",
+      "expected_action": "고용노동부와 배송 노동환경 실태·개선책 공동 검토",
+      "official_channel": "https://www.assembly.go.kr/portal/main/main.do",
+      "channel_type": "web_form",
+      "channel_source": "https://www.assembly.go.kr/portal/main/main.do",
+      "verified_at": null,
+      "verification_status": "stale_by_design",
+      "selected": false,
+      "status": "candidate",
+      "notes": ""
+    },
+    {
+      "recipient_id": "recipient-mohw-role",
+      "organization": "보건복지부",
+      "person_name": null,
+      "role": "장애인 이동편의·권익 담당 부서(조직 재검증 필요)",
+      "jurisdiction_type": "direct",
+      "reason": "장애인전용주차구역 권리 보호와 하위기준의 주무부처다.",
+      "expected_action": "예외 가능성보다 권리 침해 위험과 대안 설계 기준 검토",
+      "official_channel": "https://www.mohw.go.kr/",
+      "channel_type": "web_form",
+      "channel_source": "https://www.mohw.go.kr/",
+      "verified_at": null,
+      "verification_status": "stale_by_design",
+      "selected": false,
+      "status": "candidate",
+      "notes": ""
+    },
+    {
+      "recipient_id": "recipient-molit-role",
+      "organization": "국토교통부",
+      "person_name": null,
+      "role": "주택·주차 정책 담당 부서(조직 재검증 필요)",
+      "jurisdiction_type": "joint",
+      "reason": "하역 공간 설계기준, 기존 단지 개선과 지자체 시범 지원을 검토할 수 있다.",
+      "expected_action": "공동주택 유형별 공간 대안과 제도 개선 검토",
+      "official_channel": "https://www.molit.go.kr/",
+      "channel_type": "web_form",
+      "channel_source": "https://www.molit.go.kr/",
+      "verified_at": null,
+      "verification_status": "stale_by_design",
+      "selected": false,
+      "status": "candidate",
+      "notes": ""
+    },
+    {
+      "recipient_id": "recipient-moel-role",
+      "organization": "고용노동부",
+      "person_name": null,
+      "role": "산업안전·노무제공자 정책 담당 부서(조직 재검증 필요)",
+      "jurisdiction_type": "joint",
+      "reason": "물류 노동자의 심야 작업환경과 사업자 책임을 검토할 수 있다.",
+      "expected_action": "배송 현장 위험 조사와 사업자 운영개선 검토",
+      "official_channel": "https://www.moel.go.kr/",
+      "channel_type": "web_form",
+      "channel_source": "https://www.moel.go.kr/",
+      "verified_at": null,
+      "verification_status": "stale_by_design",
+      "selected": false,
+      "status": "candidate",
+      "notes": ""
+    }
+  ],
+  "artifacts": [],
+  "approvals": [],
+  "dispatches": [],
+  "responses": [],
+  "created_at": "2026-08-27T03:00:00.000Z",
+  "updated_at": "2026-08-27T03:00:00.000Z",
+  "privacy": {
+    "contains_personal_data": false,
+    "public_export_allowed": true,
+    "notes": "공개 예제. 현직자·연락처는 발송 불가 상태."
+  }
+}
