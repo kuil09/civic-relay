@@ -1,0 +1,474 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civic-relay.dev/schemas/case.schema.json",
+  "title": "Civic Relay Case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "title",
+    "status",
+    "jurisdiction",
+    "original_statement",
+    "problem_definition",
+    "desired_change",
+    "claims",
+    "sources",
+    "legal_layers",
+    "authorities",
+    "stakeholders",
+    "options",
+    "counterarguments",
+    "recipients",
+    "artifacts",
+    "approvals",
+    "dispatches",
+    "responses",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "intake",
+        "research",
+        "draft",
+        "review",
+        "approved",
+        "dispatched",
+        "follow_up",
+        "closed"
+      ]
+    },
+    "jurisdiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "country",
+        "region",
+        "locality"
+      ],
+      "properties": {
+        "country": {
+          "type": "string",
+          "minLength": 2
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "locality": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "original_statement": {
+      "type": "string",
+      "minLength": 1
+    },
+    "problem_definition": {
+      "type": "string"
+    },
+    "desired_change": {
+      "type": "string"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "claim.schema.json"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "source.schema.json"
+      }
+    },
+    "legal_layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "layer_id",
+          "level",
+          "instrument",
+          "current_rule",
+          "change_path",
+          "decision_maker",
+          "certainty"
+        ],
+        "properties": {
+          "layer_id": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "law",
+              "presidential_decree",
+              "ministerial_ordinance",
+              "local_ordinance",
+              "administrative_guidance",
+              "public_rule",
+              "management_rule",
+              "private_policy"
+            ]
+          },
+          "instrument": {
+            "type": "string"
+          },
+          "current_rule": {
+            "type": "string"
+          },
+          "change_path": {
+            "type": "string"
+          },
+          "decision_maker": {
+            "type": "string"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "certainty": {
+            "enum": [
+              "confirmed",
+              "needs_legal_review",
+              "hypothesis"
+            ]
+          }
+        }
+      }
+    },
+    "authorities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "authority_id",
+          "organization",
+          "authority_type",
+          "action",
+          "jurisdiction_type",
+          "reason"
+        ],
+        "properties": {
+          "authority_id": {
+            "type": "string"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "authority_type": {
+            "enum": [
+              "legislature",
+              "central_government",
+              "local_government",
+              "public_institution",
+              "private_operator"
+            ]
+          },
+          "action": {
+            "enum": [
+              "legislate",
+              "regulate",
+              "administer",
+              "enforce",
+              "supervise",
+              "operate",
+              "convene",
+              "research"
+            ]
+          },
+          "jurisdiction_type": {
+            "enum": [
+              "direct",
+              "joint",
+              "reference"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "stakeholders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "stakeholder_id",
+          "name",
+          "roles",
+          "interests",
+          "risks"
+        ],
+        "properties": {
+          "stakeholder_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "beneficiary",
+                "burdened",
+                "rights_holder",
+                "cost_bearer",
+                "enforcer",
+                "operator",
+                "representative",
+                "indirect"
+              ]
+            }
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "option_id",
+          "title",
+          "category",
+          "mechanism",
+          "legal_change",
+          "implementer",
+          "rights_impact",
+          "cost",
+          "enforcement_difficulty",
+          "reversibility"
+        ],
+        "properties": {
+          "option_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "status_quo",
+              "enforcement_improvement",
+              "operational_change",
+              "pilot",
+              "subordinate_legislation",
+              "legislation"
+            ]
+          },
+          "mechanism": {
+            "type": "string"
+          },
+          "legal_change": {
+            "type": "string"
+          },
+          "implementer": {
+            "type": "string"
+          },
+          "rights_impact": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "string"
+          },
+          "enforcement_difficulty": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "unknown"
+            ]
+          },
+          "reversibility": {
+            "enum": [
+              "high",
+              "medium",
+              "low",
+              "unknown"
+            ]
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stop_conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "counterarguments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "counterargument_id",
+          "argument",
+          "strength",
+          "response",
+          "residual_risk"
+        ],
+        "properties": {
+          "counterargument_id": {
+            "type": "string"
+          },
+          "argument": {
+            "type": "string"
+          },
+          "strength": {
+            "enum": [
+              "strong",
+              "medium",
+              "weak"
+            ]
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "response": {
+            "type": "string"
+          },
+          "residual_risk": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recipients": {
+      "type": "array",
+      "items": {
+        "$ref": "recipient.schema.json"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "kind",
+          "hash",
+          "generated_at"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "$ref": "approval.schema.json"
+      }
+    },
+    "dispatches": {
+      "type": "array",
+      "items": {
+        "$ref": "dispatch.schema.json"
+      }
+    },
+    "responses": {
+      "type": "array",
+      "items": {
+        "$ref": "response.schema.json"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "privacy": {
+      "type": "object",
+      "properties": {
+        "contains_personal_data": {
+          "type": "boolean"
+        },
+        "public_export_allowed": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

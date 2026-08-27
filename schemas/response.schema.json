@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civic-relay.dev/schemas/response.schema.json",
+  "title": "Civic Relay Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "response_id",
+    "recipient_id",
+    "classification",
+    "received_at",
+    "original_file"
+  ],
+  "properties": {
+    "response_id": {
+      "type": "string"
+    },
+    "dispatch_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recipient_id": {
+      "type": "string"
+    },
+    "classification": {
+      "enum": [
+        "acknowledgement",
+        "not_responsible",
+        "referred",
+        "request_for_information",
+        "opposed",
+        "review_promised",
+        "meeting_proposed",
+        "no_response",
+        "uncertain",
+        "other"
+      ]
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "original_file": {
+      "type": "string",
+      "x-civic-relay-sensitive": true
+    },
+    "summary": {
+      "type": "string"
+    },
+    "follow_up_tasks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "human_corrected": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

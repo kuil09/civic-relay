@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civic-relay.dev/schemas/approval.schema.json",
+  "title": "Civic Relay Approval",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approval_id",
+    "stage",
+    "actor",
+    "confirmed_human",
+    "approved_at",
+    "content_hash",
+    "scope"
+  ],
+  "properties": {
+    "approval_id": {
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "problem",
+        "evidence",
+        "policy",
+        "recipients",
+        "document",
+        "dispatch"
+      ]
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confirmed_human": {
+      "const": true
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "scope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}

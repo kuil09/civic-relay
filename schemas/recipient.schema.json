@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civic-relay.dev/schemas/recipient.schema.json",
+  "title": "Civic Relay Recipient",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "recipient_id",
+    "organization",
+    "role",
+    "jurisdiction_type",
+    "reason",
+    "expected_action",
+    "selected",
+    "verification_status"
+  ],
+  "properties": {
+    "recipient_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "organization": {
+      "type": "string",
+      "minLength": 1
+    },
+    "person_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "jurisdiction_type": {
+      "enum": [
+        "direct",
+        "joint",
+        "reference"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expected_action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "official_channel": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-civic-relay-sensitive": true
+    },
+    "channel_type": {
+      "enum": [
+        "email",
+        "web_form",
+        "postal",
+        "phone_script",
+        "none"
+      ]
+    },
+    "channel_source": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "verified_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "verification_status": {
+      "enum": [
+        "unverified",
+        "valid",
+        "stale",
+        "stale_by_design",
+        "blocked"
+      ]
+    },
+    "selected": {
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "candidate",
+        "draft",
+        "approved",
+        "dispatched",
+        "failed",
+        "responded",
+        "blocked"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
